@@ -6,10 +6,13 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"image/color"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"videogen/internal/models"
 
@@ -52,6 +55,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 			// Extrai frames do vídeo no formato frame_%04d.png na resolução e fps apropriados
 			// #nosec G204
 			extractCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-t", fmt.Sprintf("%.3f", float64(card.DurationMs)/1000.0),
 				"-i", el.Content,
 				"-vf", fmt.Sprintf("fps=%d,scale=%d:%d", fps, w, h),
 				filepath.Join(framesDir, "frame_%04d.png"),
@@ -64,6 +68,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 			audioFile := fmt.Sprintf("tmp/audio_%s_%d.aac", card.ID, i)
 			// #nosec G204
 			audioCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-t", fmt.Sprintf("%.3f", float64(card.DurationMs)/1000.0),
 				"-i", el.Content,
 				"-vn",
 				"-c:a", "aac",
@@ -131,21 +136,10 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 
 	// O retorno nomeado (err) garante que erros do Wait() atualizem o retorno da chamada
 	defer func() {
-		_ = stdin.Close()
+		// Cleanup the buffer if needed
 		bufWriterPool.Put(bw)
 
-		if cmd.Process != nil {
-			waitErr := cmd.Wait()
-			if waitErr != nil {
-				if err != nil {
-					err = fmt.Errorf("%w (log do ffmpeg: %s)", err, stderr.String())
-				} else {
-					err = fmt.Errorf("ffmpeg falhou: %w, log do ffmpeg: %s", waitErr, stderr.String())
-				}
-			}
-		}
-
-		// Remove os diretórios temporários dos frames após a execução do ffmpeg Wait
+		// Remove os diretórios temporários dos frames após a execução
 		for i, el := range card.Elements {
 			if el.Type == "video" {
 				framesDir := fmt.Sprintf("tmp/frames_%s_%d", card.ID, i)
@@ -171,6 +165,20 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	}
 
 	_ = bw.Flush()
+
+	// Finaliza a escrita de pixels no ffmpeg, forçando-o a processar e gerar o arquivo de saída (.ts)
+	_ = stdin.Close()
+	if cmd.Process != nil {
+		waitErr := cmd.Wait()
+		if waitErr != nil {
+			if err != nil {
+				err = fmt.Errorf("%w (log do ffmpeg: %s)", err, stderr.String())
+			} else {
+				err = fmt.Errorf("ffmpeg falhou: %w, log do ffmpeg: %s", waitErr, stderr.String())
+			}
+			return err
+		}
+	}
 
 	// Se houver um áudio extraído, faz o mux dele com o arquivo .ts silencioso recém-gerado!
 	var audioToMerge string
@@ -214,7 +222,23 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	return nil
 }
 
-// DrawCardState desenha o estado atual do card no contexto do GG
+func parseHexColor(s string) color.Color {
+	s = strings.TrimPrefix(s, "#")
+	c := color.RGBA{A: 255}
+	if len(s) == 6 {
+		if r, err := strconv.ParseUint(s[0:2], 16, 8); err == nil { c.R = uint8(r) }
+		if g, err := strconv.ParseUint(s[2:4], 16, 8); err == nil { c.G = uint8(g) }
+		if b, err := strconv.ParseUint(s[4:6], 16, 8); err == nil { c.B = uint8(b) }
+	} else if len(s) == 8 {
+		if r, err := strconv.ParseUint(s[0:2], 16, 8); err == nil { c.R = uint8(r) }
+		if g, err := strconv.ParseUint(s[2:4], 16, 8); err == nil { c.G = uint8(g) }
+		if b, err := strconv.ParseUint(s[4:6], 16, 8); err == nil { c.B = uint8(b) }
+		if a, err := strconv.ParseUint(s[6:8], 16, 8); err == nil { c.A = uint8(a) }
+	}
+	return c
+}
+
+// DrawCardState desenha um quadro específico de um Card
 func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int) {
 	// Fundo
 	dc.SetHexColor(card.BackgroundColor)
@@ -238,7 +262,66 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 
 			// 26. Implementar quebra de linha (Word Wrap) responsiva (margem lateral de 15%)
 			maxWidth := float64(res.Width) * 0.85
-			dc.DrawStringWrapped(el.Content, el.X, el.Y, 0.5, 0.5, maxWidth, 1.5, gg.AlignCenter)
+			align := gg.AlignCenter
+			ax, ay := 0.5, 0.5
+			if el.TextAlign == "left" {
+				align = gg.AlignLeft
+				ax = 0.0
+			} else if el.TextAlign == "right" {
+				align = gg.AlignRight
+				ax = 1.0
+			}
+			if el.ShadowColor != "" {
+				// Drop shadow (hard shadow based on offset)
+				dc.SetHexColor(el.ShadowColor)
+				dc.DrawStringWrapped(el.Content, el.X+el.ShadowOffsetX, el.Y+el.ShadowOffsetY, ax, ay, maxWidth, 1.5, align)
+				// Revert color for main text
+				dc.SetHexColor(el.Color)
+			}
+			dc.DrawStringWrapped(el.Content, el.X, el.Y, ax, ay, maxWidth, 1.5, align)
+		} else if el.Type == "rect" {
+			// Suporte a renderização de retângulos/banners com gradientes 3D
+			if strings.HasPrefix(el.Color, "gradient:") {
+				colors := strings.Split(strings.TrimPrefix(el.Color, "gradient:"), ",")
+				if len(colors) == 2 {
+					grad := gg.NewLinearGradient(el.X, el.Y-el.Height/2, el.X, el.Y+el.Height/2)
+					// Helper básico de hex local se necessário, mas vamos assumir que ParseHexColor não falhe
+					c1 := parseHexColor(colors[0])
+					c2 := parseHexColor(colors[1])
+					grad.AddColorStop(0, c1)
+					grad.AddColorStop(1, c2)
+					dc.SetFillStyle(grad)
+				}
+			} else {
+				dc.SetHexColor(el.Color)
+			}
+			dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+			dc.Fill()
+		} else if el.Type == "polygon" {
+			if len(el.Points) > 2 {
+				dc.SetHexColor(el.Color)
+				dc.MoveTo(el.Points[0][0], el.Points[0][1])
+				for i := 1; i < len(el.Points); i++ {
+					dc.LineTo(el.Points[i][0], el.Points[i][1])
+				}
+				dc.ClosePath()
+				dc.Fill()
+			}
+		} else if el.Type == "circle" {
+			// Suporte a círculos (ex: dot de notificação/gravação)
+			dc.SetHexColor(el.Color)
+			dc.DrawCircle(el.X, el.Y, el.Width)
+			dc.Fill()
+		} else if el.Type == "frame" {
+			// Suporte a molduras vazadas
+			dc.SetHexColor(el.Color)
+			strokeWidth := el.StrokeWidth
+			if strokeWidth <= 0 {
+				strokeWidth = 5.0
+			}
+			dc.SetLineWidth(strokeWidth)
+			dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+			dc.Stroke()
 		} else if el.Type == "image" {
 			// 27. Suporte a renderização de imagens estáticas sobrepostas
 			img, err := gg.LoadImage(el.Content)

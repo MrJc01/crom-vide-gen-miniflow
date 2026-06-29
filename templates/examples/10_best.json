@@ -1,0 +1,47 @@
+{
+  "template_id": "10_best",
+  "resolution": { "width": 1920, "height": 1080 },
+  "fps": 30,
+  "audio_url": "the_mountain-piano-background-487020.mp3",
+  "cards": [
+    {
+      "id": "card_1",
+      "duration_ms": 6000,
+      "background_color": "#000000",
+      "elements": [
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "type": "polygon",
+          "color": "#14A39A",
+          "points": [
+            [0, 0],
+            [1200, 0],
+            [1000, 1080],
+            [0, 1080]
+          ]
+        },
+        
+        { "type": "rect", "color": "#FFFFFF", "x": 480, "y": 280, "width": 550, "height": 120 },
+        { "type": "text", "content": "10 Best", "font_size": 90, "color": "#14A39A", "x": 230, "y": 280, "text_align": "left", "shadow_color": "#00000033", "shadow_offset_x": 4, "shadow_offset_y": 4 },
+        
+        { "type": "rect", "color": "#FFFFFF", "x": 420, "y": 440, "width": 430, "height": 120 },
+        { "type": "text", "content": "Video", "font_size": 90, "color": "#14A39A", "x": 230, "y": 440, "text_align": "left", "shadow_color": "#00000033", "shadow_offset_x": 4, "shadow_offset_y": 4 },
+        
+        { "type": "rect", "color": "#FFFFFF", "x": 560, "y": 600, "width": 710, "height": 120 },
+        { "type": "text", "content": "Templates", "font_size": 90, "color": "#14A39A", "x": 230, "y": 600, "text_align": "left", "shadow_color": "#00000033", "shadow_offset_x": 4, "shadow_offset_y": 4 },
+        
+        { "type": "rect", "color": "#FFFFFF", "x": 500, "y": 760, "width": 590, "height": 120 },
+        { "type": "text", "content": "for 2021", "font_size": 90, "color": "#14A39A", "x": 230, "y": 760, "text_align": "left", "shadow_color": "#00000033", "shadow_offset_x": 4, "shadow_offset_y": 4 },
+        
+        { "type": "text", "content": "TYPOGRAPHY", "font_size": 110, "color": "#FFFFFF", "x": 1440, "y": 540, "shadow_color": "#00000066", "shadow_offset_x": 8, "shadow_offset_y": 8 }
+      ]
+    }
+  ]
+}

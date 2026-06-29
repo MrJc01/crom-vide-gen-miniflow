@@ -27,14 +27,21 @@ type Card struct {
 }
 
 type Element struct {
-	Type     string  `json:"type"` // "text", "image", "video"
-	Content  string  `json:"content,omitempty"`
-	FontSize float64 `json:"font_size,omitempty"`
-	Color    string  `json:"color,omitempty"`
-	X        float64 `json:"x"`
-	Y        float64 `json:"y"`
-	Width    float64 `json:"width,omitempty"`
-	Height   float64 `json:"height,omitempty"`
+	Type          string      `json:"type"` // "text", "image", "video", "rect", "circle", "frame", "polygon"
+	Content       string      `json:"content,omitempty"`
+	FontSize      float64     `json:"font_size,omitempty"`
+	Color         string      `json:"color,omitempty"`
+	X             float64     `json:"x"`
+	Y             float64     `json:"y"`
+	Width         float64     `json:"width,omitempty"`
+	Height        float64     `json:"height,omitempty"`
+	TextAlign     string      `json:"text_align,omitempty"`
+	StrokeWidth   float64     `json:"stroke_width,omitempty"`
+	Points        [][]float64 `json:"points,omitempty"` // For polygons: [[x1, y1], [x2, y2]]
+	ShadowColor   string      `json:"shadow_color,omitempty"`
+	ShadowBlur    float64     `json:"shadow_blur,omitempty"`
+	ShadowOffsetX float64     `json:"shadow_offset_x,omitempty"`
+	ShadowOffsetY float64     `json:"shadow_offset_y,omitempty"`
 }
 
 // Validate checks if the template has the required fields

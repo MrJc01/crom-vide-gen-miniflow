@@ -25,3 +25,18 @@ memprofile
 # Arquivos de sistema
 .DS_Store
 Thumbs.db
+
+# Configurações locais
+.env
+.env.local
+
+# Outputs gerados
+/assets/output_examples/
+*.jpg
+*.png
+*.gif
+*.webm
+
+# Go mod (opcionalmente ignorar cache de build)
+vendor/
+go.sum
