@@ -10,6 +10,8 @@ export default function PreRenderModal({ data, onClose, onRender }) {
       const initialData = JSON.parse(JSON.stringify(data));
       // Clear global audio and media contents so they start empty
       initialData.audio_url = '';
+      initialData.hwaccel = initialData.hwaccel || false;
+      initialData.jpeg_quality = initialData.jpeg_quality || 2;
       initialData.cards.forEach(card => {
         card.elements.forEach(el => {
           if (el.type === 'video' || el.type === 'image') {
@@ -135,6 +137,45 @@ export default function PreRenderModal({ data, onClose, onRender }) {
                 📁 Escolher Arquivo
                 <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, true, null, null)} />
               </label>
+            </div>
+          </div>
+
+          {/* Render optimization settings */}
+          <div style={{ 
+            marginBottom: '1.5rem', 
+            padding: '1rem', 
+            borderRadius: '8px', 
+            border: '1px solid var(--border)',
+            background: 'rgba(255, 255, 255, 0.02)'
+          }}>
+            <h4 style={{ color: '#e2e8f0', margin: '0 0 0.75rem 0', fontSize: '0.9rem' }}>⚡ Configurações de Renderização</h4>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+              {/* HW Accel Checkbox */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                <input 
+                  type="checkbox" 
+                  checked={formData.hwaccel || false} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, hwaccel: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                Aceleração por GPU (NVIDIA NVENC)
+              </label>
+
+              {/* JPEG Quality Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Qualidade do Rascunho:</span>
+                <select 
+                  value={formData.jpeg_quality || 2} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, jpeg_quality: parseInt(e.target.value) }))}
+                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', borderRadius: '4px', background: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
+                >
+                  <option value="2">Alta (q:v 2)</option>
+                  <option value="5">Média (q:v 5)</option>
+                  <option value="10">Baixa (q:v 10 - Rápida)</option>
+                  <option value="15">Ultra Baixa (q:v 15 - Ultra Rápida)</option>
+                </select>
+              </div>
             </div>
           </div>
 

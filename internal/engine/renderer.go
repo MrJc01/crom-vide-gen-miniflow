@@ -17,8 +17,10 @@ import (
 	"videogen/internal/models"
 
 	"github.com/fogleman/gg"
+	"github.com/golang/freetype/truetype"
 	_ "image/jpeg"
 	_ "image/png"
+	"golang.org/x/image/font"
 )
 
 var bufWriterPool = sync.Pool{
@@ -28,11 +30,38 @@ var bufWriterPool = sync.Pool{
 }
 
 type FFmpegRenderer struct {
-	UseHWAccel bool
+	UseHWAccel  bool
+	JPEGQuality int
 }
 
-func NewFFmpegRenderer(useHWAccel bool) *FFmpegRenderer {
-	return &FFmpegRenderer{UseHWAccel: useHWAccel}
+var (
+	nvencSupported bool
+	nvencChecked   sync.Once
+)
+
+func checkNVENC() bool {
+	nvencChecked.Do(func() {
+		// Executa um comando rápido e curto de teste para saber se o driver nvenc funciona na máquina local
+		cmd := exec.Command("ffmpeg", "-f", "lavfi", "-i", "nullsrc=s=640x480", "-c:v", "h264_nvenc", "-t", "0.01", "-f", "null", "-")
+		err := cmd.Run()
+		nvencSupported = (err == nil)
+		if !nvencSupported {
+			slog.Warn("Aceleração por hardware (h264_nvenc) indisponível neste ambiente. O renderizador usará CPU (libx264).")
+		} else {
+			slog.Info("Aceleração por hardware (h264_nvenc) suportada e pronta para uso!")
+		}
+	})
+	return nvencSupported
+}
+
+func NewFFmpegRenderer(useHWAccel bool, jpegQuality int) *FFmpegRenderer {
+	if jpegQuality < 1 || jpegQuality > 31 {
+		jpegQuality = 2
+	}
+	return &FFmpegRenderer{
+		UseHWAccel:  useHWAccel,
+		JPEGQuality: jpegQuality,
+	}
 }
 
 // RenderCard processa um card específico e gera um arquivo .ts temporário
@@ -72,7 +101,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 				"-t", fmt.Sprintf("%.3f", float64(card.DurationMs)/1000.0),
 				"-i", el.Content,
 				"-vf", fmt.Sprintf("fps=%d,scale=%d:%d", fps, w, h),
-				"-q:v", "2",
+				"-q:v", strconv.Itoa(r.JPEGQuality),
 				filepath.Join(framesDir, "frame_%04d.jpg"),
 			)
 			out, err := extractCmd.CombinedOutput()
@@ -103,7 +132,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	}
 
 	vcodec := "libx264"
-	if r.UseHWAccel {
+	if r.UseHWAccel && checkNVENC() {
 		vcodec = "h264_nvenc"
 	}
 
@@ -146,6 +175,26 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 		return fmt.Errorf("erro ao iniciar ffmpeg: %w", err)
 	}
 
+	// Pre-load Roboto font to avoid reading/parsing Roboto.ttf on every frame
+	var robotoFont *truetype.Font
+	if fontBytes, fontErr := os.ReadFile("assets/fonts/Roboto.ttf"); fontErr == nil {
+		if f, parseErr := truetype.Parse(fontBytes); parseErr == nil {
+			robotoFont = f
+		}
+	}
+
+	// Pre-load and cache static images to avoid decoding the same image on every frame
+	imageCache := make(map[string]image.Image)
+	for _, el := range card.Elements {
+		if el.Type == "image" && el.Content != "" {
+			if _, exists := imageCache[el.Content]; !exists {
+				if img, imgErr := gg.LoadImage(el.Content); imgErr == nil {
+					imageCache[el.Content] = img
+				}
+			}
+		}
+	}
+
 	dc := gg.NewContext(res.Width, res.Height)
 
 	bw := bufWriterPool.Get().(*bufio.Writer)
@@ -166,7 +215,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	}()
 
 	for f := 0; f < totalFrames; f++ {
-		DrawCardState(dc, card, res, f)
+		DrawCardState(dc, card, res, f, imageCache, robotoFont)
 
 		rgbaImg, ok := dc.Image().(*image.RGBA)
 		if !ok {
@@ -255,8 +304,8 @@ func parseHexColor(s string) color.Color {
 	return c
 }
 
-// DrawCardState desenha um quadro específico de um Card
-func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int) {
+// DrawCardState desenha um quadro específico de um Card com cache de fontes e imagens
+func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int, imageCache map[string]image.Image, robotoFont *truetype.Font) {
 	// Fundo
 	dc.SetHexColor(card.BackgroundColor)
 	dc.Clear()
@@ -277,9 +326,20 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 				scaledFontSize = 10 // Limite mínimo de legibilidade
 			}
 
-			// 25. Carregar fonte customizada (stub com fallback)
-			if err := dc.LoadFontFace("assets/fonts/Roboto.ttf", scaledFontSize); err != nil {
-				// Fallback silencioso se não houver fonte (graceful degradation)
+			// Utiliza a fonte Roboto pré-carregada para evitar leitura de I/O por frame
+			if robotoFont != nil {
+				face := truetype.NewFace(robotoFont, &truetype.Options{
+					Size:    scaledFontSize,
+					DPI:     72,
+					Hinting: font.HintingFull,
+				})
+				dc.SetFontFace(face)
+				defer face.Close()
+			} else {
+				// Fallback se a fonte não foi carregada no cache
+				if err := dc.LoadFontFace("assets/fonts/Roboto.ttf", scaledFontSize); err != nil {
+					// Fallback silencioso se não houver fonte (graceful degradation)
+				}
 			}
 
 			// 26. Implementar quebra de linha (Word Wrap) responsiva (margem lateral de 15%)
@@ -345,13 +405,17 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 			dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
 			dc.Stroke()
 		} else if el.Type == "image" {
-			// 27. Suporte a renderização de imagens estáticas sobrepostas
-			img, err := gg.LoadImage(el.Content)
-			if err != nil {
-				dc.Pop()
-				continue
+			// Utiliza cache pré-carregado de imagens estáticas
+			if img, exists := imageCache[el.Content]; exists {
+				dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
+			} else {
+				img, err := gg.LoadImage(el.Content)
+				if err != nil {
+					dc.Pop()
+					continue
+				}
+				dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 			}
-			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 		} else if el.Type == "video" {
 			// 27. Suporte a renderização de elementos de vídeo frame a frame
 			framePath := fmt.Sprintf("tmp/frames_%s_%d/frame_%04d.jpg", card.ID, elIdx, frameIndex+1)

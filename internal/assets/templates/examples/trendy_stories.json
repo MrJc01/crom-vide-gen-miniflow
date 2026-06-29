@@ -1,0 +1,31 @@
+{
+  "template_id": "trendy_stories",
+  "resolution": { "width": 1080, "height": 1920 },
+  "fps": 30,
+  "audio_url": "the_mountain-piano-background-487020.mp3",
+  "cards": [
+    {
+      "id": "card_trendy",
+      "duration_ms": 6000,
+      "background_color": "#111111",
+      "elements": [
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 540,
+          "y": 960,
+          "width": 1080,
+          "height": 1920
+        },
+        { "type": "rect", "color": "#D32F2F99", "x": 270, "y": 960, "width": 540, "height": 1920 },
+        { "type": "rect", "color": "#00BCD499", "x": 810, "y": 960, "width": 540, "height": 1920 },
+        
+        { "type": "frame", "color": "#FFFFFF", "x": 540, "y": 960, "width": 820, "height": 1420, "stroke_width": 8 },
+        
+        { "type": "text", "content": "UP TO", "font_size": 40, "color": "#FFFFFF", "x": 300, "y": 700 },
+        { "type": "text", "content": "50%", "font_size": 180, "color": "#FFFFFF", "x": 540, "y": 960, "shadow_color": "#00000099", "shadow_offset_x": 8, "shadow_offset_y": 8 },
+        { "type": "text", "content": "NEW", "font_size": 40, "color": "#FFFFFF", "x": 780, "y": 1200 }
+      ]
+    }
+  ]
+}

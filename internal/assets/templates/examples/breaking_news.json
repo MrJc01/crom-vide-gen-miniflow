@@ -1,0 +1,35 @@
+{
+  "template_id": "breaking_news",
+  "resolution": { "width": 1920, "height": 1080 },
+  "fps": 30,
+  "audio_url": "the_mountain-piano-background-487020.mp3",
+  "cards": [
+    {
+      "id": "card_news",
+      "duration_ms": 6000,
+      "background_color": "#00FF00",
+      "elements": [
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080
+        },
+        
+        { "type": "rect", "color": "gradient:#CC0000,#880000", "x": 250, "y": 80, "width": 500, "height": 80 },
+        { "type": "text", "content": "BREAKING NEWS", "font_size": 40, "color": "#FFFFFF", "x": 250, "y": 80, "shadow_color": "#00000066", "shadow_offset_x": 2, "shadow_offset_y": 2 },
+        
+        { "type": "circle", "color": "#FF0000", "x": 1650, "y": 80, "width": 30 },
+        { "type": "text", "content": "LIVE", "font_size": 40, "color": "#FF0000", "x": 1750, "y": 80, "shadow_color": "#FFFFFF99", "shadow_offset_x": 1, "shadow_offset_y": 1 },
+        
+        { "type": "rect", "color": "gradient:#0033CC,#001166", "x": 1150, "y": 950, "width": 1500, "height": 100 },
+        { "type": "text", "content": "A SUA NOSTALGIA COMO INSPIRAÇÃO EM TEMPO REAL", "font_size": 40, "color": "#FFFFFF", "x": 420, "y": 950, "text_align": "left", "shadow_color": "#00000099", "shadow_offset_x": 3, "shadow_offset_y": 3 },
+        
+        { "type": "rect", "color": "gradient:#E60000,#990000", "x": 200, "y": 950, "width": 400, "height": 100 },
+        { "type": "text", "content": "NEWS", "font_size": 60, "color": "#FFFFFF", "x": 200, "y": 950, "shadow_color": "#00000099", "shadow_offset_x": 4, "shadow_offset_y": 4 }
+      ]
+    }
+  ]
+}

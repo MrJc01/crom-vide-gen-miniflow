@@ -1,0 +1,45 @@
+{
+  "template_id": "multiscreen",
+  "resolution": { "width": 1080, "height": 1920 },
+  "fps": 30,
+  "audio_url": "the_mountain-piano-background-487020.mp3",
+  "cards": [
+    {
+      "id": "card_multiscreen",
+      "duration_ms": 6000,
+      "background_color": "#000000",
+      "elements": [
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 180,
+          "y": 960,
+          "width": 360,
+          "height": 1920
+        },
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 540,
+          "y": 960,
+          "width": 360,
+          "height": 1920
+        },
+        {
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
+          "x": 900,
+          "y": 960,
+          "width": 360,
+          "height": 1920
+        },
+        
+        { "type": "rect", "color": "#FF6600", "x": 540, "y": 900, "width": 1080, "height": 140 },
+        { "type": "text", "content": "MULTISCREEN", "font_size": 110, "color": "#000000", "x": 540, "y": 900 },
+        
+        { "type": "rect", "color": "#FFFFFF", "x": 540, "y": 1040, "width": 1080, "height": 140 },
+        { "type": "text", "content": "TRANSITION", "font_size": 110, "color": "#FF6600", "x": 540, "y": 1040 }
+      ]
+    }
+  ]
+}

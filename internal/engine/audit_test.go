@@ -28,7 +28,7 @@ func TestAudit_MissingFFmpeg(t *testing.T) {
 	os.Setenv("PATH", "")
 	defer os.Setenv("PATH", oldPath)
 
-	renderer := engine.NewFFmpegRenderer(false)
+	renderer := engine.NewFFmpegRenderer(false, 2)
 	card := models.Card{ID: "card_fail", DurationMs: 1000, BackgroundColor: "#000000"}
 	res := models.Size{Width: 100, Height: 100}
 
@@ -64,7 +64,7 @@ exit 0
 	os.Setenv("PATH", mockBinDir+string(os.PathListSeparator)+oldPath)
 	defer os.Setenv("PATH", oldPath)
 
-	renderer := engine.NewFFmpegRenderer(false)
+	renderer := engine.NewFFmpegRenderer(false, 2)
 	card := models.Card{
 		ID:              "card_pixels",
 		DurationMs:      1000, // 1 segundo
@@ -126,7 +126,7 @@ exit 0
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	renderer := engine.NewFFmpegRenderer(false)
+	renderer := engine.NewFFmpegRenderer(false, 2)
 	card := models.Card{ID: "card_cancel", DurationMs: 1000, BackgroundColor: "#000000"}
 	res := models.Size{Width: 100, Height: 100}
 

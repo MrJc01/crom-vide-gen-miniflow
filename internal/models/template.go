@@ -2,16 +2,19 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
 
 type Template struct {
-	TemplateID string `json:"template_id"`
-	Resolution Size   `json:"resolution"`
-	FPS        int    `json:"fps"`
-	Cards      []Card `json:"cards"`
-	AudioURL   string `json:"audio_url,omitempty"`
+	TemplateID  string `json:"template_id"`
+	Resolution  Size   `json:"resolution"`
+	FPS         int    `json:"fps"`
+	Cards       []Card `json:"cards"`
+	AudioURL    string `json:"audio_url,omitempty"`
+	HWAccel     bool   `json:"hwaccel"`
+	JPEGQuality int    `json:"jpeg_quality,omitempty"`
 }
 
 type Size struct {
@@ -70,6 +73,14 @@ func (t *Template) Validate() error {
 		return errors.New("fps máximo permitido é 60")
 	}
 
+	// Validar e atribuir qualidade JPEG padrão
+	if t.JPEGQuality == 0 {
+		t.JPEGQuality = 2
+	}
+	if t.JPEGQuality < 1 || t.JPEGQuality > 31 {
+		return errors.New("jpeg_quality deve ser entre 1 (melhor) e 31 (pior)")
+	}
+
 	for _, card := range t.Cards {
 		// 87. Sanitizar ID do card (apenas alfa-numérico ou underscore) para impedir injeção de parâmetros/flags do FFmpeg nos filenames
 		if matched, _ := regexp.MatchString(`^[a-zA-Z0-9_]+$`, card.ID); !matched {
@@ -88,4 +99,72 @@ func (t *Template) Validate() error {
 	}
 
 	return nil
+}
+
+// GenerateSchemaPrint gera uma representação textual e formatada da estrutura de cards
+// e variáveis do template, útil para logs de console e documentações interativas na web.
+func (t *Template) GenerateSchemaPrint() string {
+	var sb strings.Builder
+	sb.WriteString("=========================================================================\n")
+	sb.WriteString(fmt.Sprintf(" ESQUEMA DO TEMPLATE: %s\n", t.TemplateID))
+	sb.WriteString("=========================================================================\n")
+	sb.WriteString(fmt.Sprintf("• Resolução: %dx%d (Aspect Ratio)\n", t.Resolution.Width, t.Resolution.Height))
+	sb.WriteString(fmt.Sprintf("• FPS:        %d quadros por segundo\n", t.FPS))
+	if t.AudioURL != "" {
+		sb.WriteString(fmt.Sprintf("• Trilha Sonora Global: %s\n", t.AudioURL))
+	}
+	sb.WriteString(fmt.Sprintf("• Aceleração por GPU (NVENC): %t\n", t.HWAccel))
+	sb.WriteString(fmt.Sprintf("• Qualidade JPEG Temporário:   %d (escala 1 a 31)\n", t.JPEGQuality))
+	sb.WriteString(fmt.Sprintf("• Total de Cenas (Cards):      %d\n", len(t.Cards)))
+	sb.WriteString("-------------------------------------------------------------------------\n")
+
+	for i, card := range t.Cards {
+		sb.WriteString(fmt.Sprintf(" CENA #%d (ID: %q) | Duração: %.2fs (%d ms) | Fundo: %s\n", 
+			i+1, card.ID, float64(card.DurationMs)/1000.0, card.DurationMs, card.BackgroundColor))
+		sb.WriteString(" Elementos e variáveis dinâmicas configuráveis:\n")
+		
+		if len(card.Elements) == 0 {
+			sb.WriteString("   (Nenhum elemento nesta cena)\n")
+		}
+		
+		for elIdx, el := range card.Elements {
+			badge := ""
+			switch el.Type {
+			case "video":
+				badge = "🎥 VÍDEO"
+			case "image":
+				badge = "🖼️ IMAGEM"
+			case "text":
+				badge = "📝 TEXTO"
+			case "rect":
+				badge = "⏹️ RETÂNGULO"
+			case "circle":
+				badge = "🟢 CÍRCULO"
+			case "polygon":
+				badge = "📐 POLÍGONO"
+			case "frame":
+				badge = "🖼️ MOLDURA"
+			default:
+				badge = "🧩 ELEMENTO"
+			}
+			
+			// Exibe detalhes específicos baseados no tipo do elemento
+			info := ""
+			if el.Type == "text" {
+				info = fmt.Sprintf("Content: %q, Font Size: %.0f, Color: %s", el.Content, el.FontSize, el.Color)
+			} else if el.Type == "video" || el.Type == "image" {
+				info = fmt.Sprintf("Content (Path/URL): %q, Size: %.0fx%.0f", el.Content, el.Width, el.Height)
+			} else {
+				info = fmt.Sprintf("Color: %s, Size: %.0fx%.0f", el.Color, el.Width, el.Height)
+			}
+			
+			sb.WriteString(fmt.Sprintf("   [%d] %-12s | X: %5.0f | Y: %5.0f | %s\n", elIdx+1, badge, el.X, el.Y, info))
+		}
+		sb.WriteString("-------------------------------------------------------------------------\n")
+	}
+	
+	sb.WriteString(" FORMATO DE ENVIO DO JSON:\n")
+	sb.WriteString(" Envie uma requisição POST para /api/render com o corpo correspondente à estrutura acima.\n")
+	sb.WriteString("=========================================================================\n")
+	return sb.String()
 }

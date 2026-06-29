@@ -22,11 +22,11 @@
   "job_1782770088459": {
     "id": "job_1782770088459",
     "template_id": "breaking_news",
-    "status": "rendering",
+    "status": "done",
     "file_path": "outputs/output_breaking_news_job_1782770088459.mp4",
     "category": "Uncategorized",
     "archived": false,
     "created_at": "2026-06-29T18:54:48.459557907-03:00",
-    "updated_at": "2026-06-29T18:54:48.459557967-03:00"
+    "updated_at": "2026-06-29T18:56:36.145145982-03:00"
   }
 }

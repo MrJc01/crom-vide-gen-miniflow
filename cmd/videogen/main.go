@@ -13,6 +13,7 @@ import (
 	"runtime/pprof"
 	"path/filepath"
 	"syscall"
+	"videogen/internal/assets"
 	"videogen/internal/engine"
 	"videogen/internal/models"
 	"videogen/internal/utils"
@@ -21,6 +22,11 @@ import (
 var version = "v0.1.0"
 
 func main() {
+	// Extrair recursos embutidos padrões (bootstrapping)
+	if err := assets.ExtractAll(); err != nil {
+		slog.Warn("Aviso: erro ao extrair recursos embutidos", "erro", err)
+	}
+
 	// Prepara PATH local para encontrar o ffmpeg
 	if absBin, err := filepath.Abs("bin"); err == nil {
 		os.Setenv("PATH", absBin+string(os.PathListSeparator)+os.Getenv("PATH"))
@@ -40,6 +46,7 @@ func run() error {
 	outPath := flag.String("out", "output_final.mp4", "Caminho e nome do arquivo de saída")
 	showVersion := flag.Bool("version", false, "Exibe a versão do sistema")
 	hwaccel := flag.Bool("hwaccel", false, "Habilita aceleração por hardware (ex: NVENC)")
+	printSchema := flag.Bool("schema", false, "Exibe o esquema textual formatado do template e encerra")
 	
 	// 49. Profiling de CPU e Memória via pprof
 	cpuprofile := flag.String("cpuprofile", "", "Grava CPU profile no arquivo especificado")
@@ -133,6 +140,11 @@ func run() error {
 
 	slog.Info("JSON parseado e validado com sucesso", "template_id", template.TemplateID)
 
+	if *printSchema {
+		fmt.Println(template.GenerateSchemaPrint())
+		return nil
+	}
+
 	// 4. Estruturar a camada de configuração (leitura de variáveis de ambiente)
 	// 44. Adaptar workers aos cores lógicos ou à env
 	workersCount := 0
@@ -152,7 +164,7 @@ func run() error {
 	slog.Info("Configuração do pool de concorrência", "workers", workersCount)
 
 	// 14. Estruturar camada de injeção de dependências
-	renderer := engine.NewFFmpegRenderer(*hwaccel)
+	renderer := engine.NewFFmpegRenderer(*hwaccel, template.JPEGQuality)
 
 	err = engine.ProcessVideo(ctx, template, *outPath, workersCount, renderer)
 	if err != nil {

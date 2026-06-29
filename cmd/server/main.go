@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/fogleman/gg"
+	"videogen/internal/assets"
 	"videogen/internal/db"
 	"videogen/internal/engine"
 	"videogen/internal/models"
@@ -25,6 +26,11 @@ import (
 const templatesDir = "templates/examples"
 
 func main() {
+	// Extrair recursos embutidos padrões (bootstrapping)
+	if err := assets.ExtractAll(); err != nil {
+		log.Printf("Aviso: erro ao extrair recursos embutidos: %v", err)
+	}
+
 	// Prepara PATH local para encontrar o ffmpeg
 	if absBin, err := filepath.Abs("bin"); err == nil {
 		os.Setenv("PATH", absBin+string(os.PathListSeparator)+os.Getenv("PATH"))
@@ -104,6 +110,12 @@ func handleTemplateByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing ID", http.StatusBadRequest)
 		return
 	}
+
+	isExample := false
+	if strings.HasSuffix(id, "/example") {
+		id = strings.TrimSuffix(id, "/example")
+		isExample = true
+	}
 	
 	path := filepath.Join(templatesDir, id+".json")
 
@@ -113,6 +125,28 @@ func handleTemplateByID(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Not found", http.StatusNotFound)
 			return
 		}
+
+		if isExample {
+			var tmpl models.Template
+			if err := json.Unmarshal(data, &tmpl); err != nil {
+				http.Error(w, "Error parsing template: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			schemaText := tmpl.GenerateSchemaPrint()
+
+			response := struct {
+				Template    models.Template `json:"template"`
+				SchemaPrint string          `json:"schema_print"`
+			}{
+				Template:    tmpl,
+				SchemaPrint: schemaText,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(response)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	} else if r.Method == http.MethodPost {
@@ -171,7 +205,7 @@ func handlePreview(w http.ResponseWriter, r *http.Request) {
 	dc := gg.NewContext(res.Width, res.Height)
 	
 	// Utilizar nossa engine atualizada!
-	engine.DrawCardState(dc, card, res, 0)
+	engine.DrawCardState(dc, card, res, 0, nil, nil)
 
 	// Codificar imagem final para PNG
 	var buf bytes.Buffer
@@ -224,7 +258,7 @@ func handleRender(w http.ResponseWriter, r *http.Request) {
 	go func(t models.Template, output string, jID string) {
 		log.Printf("Starting background render for template %s to %s", t.TemplateID, output)
 		
-		renderer := engine.NewFFmpegRenderer(false) 
+		renderer := engine.NewFFmpegRenderer(t.HWAccel, t.JPEGQuality) 
 		
 		err := engine.ProcessVideo(context.Background(), t, output, runtime.NumCPU(), renderer)
 		if err != nil {
