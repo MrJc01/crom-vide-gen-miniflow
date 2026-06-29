@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+	"strings"
 	"videogen/internal/models"
 	"videogen/internal/utils"
 )
@@ -30,7 +31,7 @@ func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results 
 
 		// 48. Coletar métricas de tempo de execução por card
 		start := time.Now()
-		err := renderer.RenderCard(card, tmpl.Resolution, tmpl.FPS, outPath)
+		err := renderer.RenderCard(ctx, card, tmpl.Resolution, tmpl.FPS, outPath)
 		elapsed := time.Since(start)
 
 		if err != nil {
@@ -48,6 +49,20 @@ func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results 
 func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string, numWorkers int, renderer Renderer) error {
 	// 41. sync.WaitGroup e 42. Worker Pool
 	var wg sync.WaitGroup
+
+	// 12. Pre-baixar todos os assets remotos (imagens dos elementos)
+	for i, card := range tmpl.Cards {
+		for j, el := range card.Elements {
+			if el.Type == "image" && (strings.HasPrefix(el.Content, "http://") || strings.HasPrefix(el.Content, "https://")) {
+				slog.Info("Baixando imagem remota do elemento", "url", el.Content)
+				localPath, err := utils.DownloadRemoteFile(el.Content, "tmp")
+				if err != nil {
+					return fmt.Errorf("erro ao baixar imagem %s: %w", el.Content, err)
+				}
+				tmpl.Cards[i].Elements[j].Content = localPath
+			}
+		}
+	}
 
 	jobs := make(chan models.Card, len(tmpl.Cards))
 	results := make(chan string, len(tmpl.Cards))

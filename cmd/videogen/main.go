@@ -20,6 +20,13 @@ import (
 var version = "v0.1.0"
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("Erro fatal na execução", "erro", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// 3. Interface CLI (flag) e 16. Versionamento
 	// 43. Parametrizar concorrência via flag CLI
 	numWorkers := flag.Int("workers", 0, "Número de workers concorrentes (0 usa runtime.NumCPU ou ENV)")
@@ -48,18 +55,17 @@ func main() {
 
 	if *showVersion {
 		_, _ = os.Stdout.WriteString("videogen version " + version + "\n")
-		return
+		return nil
 	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			slog.Error("Falha ao criar arquivo de CPU profile", "erro", err)
-			os.Exit(1)
+			return fmt.Errorf("falha ao criar arquivo de CPU profile: %w", err)
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
-			slog.Error("Falha ao iniciar CPU profile", "erro", err)
-			os.Exit(1)
+			_ = f.Close()
+			return fmt.Errorf("falha ao iniciar CPU profile: %w", err)
 		}
 		defer pprof.StopCPUProfile()
 	}
@@ -89,10 +95,9 @@ func main() {
 
 	// 11. Criar gerenciador de arquivos temporários e diretório de saída
 	if err := utils.EnsureDirectories("tmp"); err != nil {
-		slog.Error("Falha ao criar diretório temporário", "erro", err)
-		os.Exit(1)
+		return fmt.Errorf("falha ao criar diretório temporário: %w", err)
 	}
-	// 63. Limpeza pós-execução
+	// 63. Limpeza pós-execução (garantido pela saída da função run())
 	defer func() {
 		if err := utils.CleanupTempFiles("tmp"); err != nil {
 			slog.Warn("Falha ao limpar arquivos temporários", "erro", err)
@@ -103,25 +108,21 @@ func main() {
 
 	// 21 e 22. Checar presença do FFmpeg
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
-		slog.Error("FFmpeg não encontrado no PATH do sistema. Por favor, instale o FFmpeg para rodar o videogen.")
-		os.Exit(1)
+		return fmt.Errorf("FFmpeg não encontrado no PATH do sistema. Por favor, instale o FFmpeg para rodar o videogen")
 	}
 
 	file, err := os.ReadFile(*jsonPath)
 	if err != nil {
-		slog.Error("Erro ao ler JSON", "erro", err)
-		os.Exit(1)
+		return fmt.Errorf("erro ao ler JSON: %w", err)
 	}
 
 	var template models.Template
 	if err := json.Unmarshal(file, &template); err != nil {
-		slog.Error("Erro ao fazer parse do JSON", "erro", err)
-		os.Exit(1)
+		return fmt.Errorf("erro ao fazer parse do JSON: %w", err)
 	}
 
 	if err := template.Validate(); err != nil {
-		slog.Error("JSON invalido", "erro", err)
-		os.Exit(1)
+		return fmt.Errorf("JSON inválido: %w", err)
 	}
 
 	slog.Info("JSON parseado e validado com sucesso", "template_id", template.TemplateID)
@@ -132,7 +133,6 @@ func main() {
 	if *numWorkers > 0 {
 		workersCount = *numWorkers
 	} else if envWorkers := os.Getenv("VIDEOGEN_WORKERS"); envWorkers != "" {
-		// Conversão rápida de string para int
 		var parsed int
 		_, _ = fmt.Sscanf(envWorkers, "%d", &parsed)
 		if parsed > 0 {
@@ -150,8 +150,7 @@ func main() {
 
 	err = engine.ProcessVideo(ctx, template, *outPath, workersCount, renderer)
 	if err != nil {
-		slog.Error("Falha crítica ao gerar vídeo", "erro", err)
-		os.Exit(1)
+		return fmt.Errorf("falha crítica ao gerar vídeo: %w", err)
 	}
 
 	slog.Info("Setup e execução concluídos com sucesso!", "video_path", *outPath)
@@ -160,8 +159,8 @@ func main() {
 	select {
 	case <-ctx.Done():
 		slog.Info("Desligamento gracioso acionado. Limpando recursos...")
-		// Limpeza iria aqui
 	default:
-		// Continua o fluxo
 	}
+
+	return nil
 }

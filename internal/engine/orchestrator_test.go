@@ -16,7 +16,7 @@ type mockRenderer struct {
 	shouldErr    bool
 }
 
-func (m *mockRenderer) RenderCard(card models.Card, res models.Size, fps int, outPath string) error {
+func (m *mockRenderer) RenderCard(ctx context.Context, card models.Card, res models.Size, fps int, outPath string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	

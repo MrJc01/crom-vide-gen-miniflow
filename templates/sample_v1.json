@@ -9,12 +9,18 @@
       "background_color": "#1A1A1A",
       "elements": [
         {
+          "type": "image",
+          "content": "assets/images/logo.png",
+          "x": 540,
+          "y": 500
+        },
+        {
           "type": "text",
           "content": "Super Oferta!",
           "font_size": 80,
           "color": "#FFFFFF",
           "x": 540,
-          "y": 960
+          "y": 1000
         }
       ]
     },
@@ -24,12 +30,18 @@
       "background_color": "#E63946",
       "elements": [
         {
+          "type": "image",
+          "content": "assets/images/logo.png",
+          "x": 540,
+          "y": 500
+        },
+        {
           "type": "text",
           "content": "Apenas R$ 99,00",
           "font_size": 100,
           "color": "#FFFFFF",
           "x": 540,
-          "y": 960
+          "y": 1000
         }
       ]
     }

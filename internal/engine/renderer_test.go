@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"context"
 	"image/color"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ exit 0
 	// A fonte assets/fonts/Roboto.ttf não existe no ambiente de teste,
 	// então RenderCard vai falhar em dc.LoadFontFace, mas deve continuar executando
 	// e gerar o arquivo de saída sem quebras de execução ou pânico!
-	err := renderer.RenderCard(card, models.Size{Width: 640, Height: 480}, 10, outPath)
+	err := renderer.RenderCard(context.Background(), card, models.Size{Width: 640, Height: 480}, 10, outPath)
 	if err != nil {
 		t.Fatalf("RenderCard falhou: %v", err)
 	}

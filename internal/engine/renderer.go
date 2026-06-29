@@ -3,8 +3,9 @@ package engine
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
-	"image/png"
+	"image"
 	"os/exec"
 	"sync"
 	"videogen/internal/models"
@@ -27,7 +28,7 @@ func NewFFmpegRenderer(useHWAccel bool) *FFmpegRenderer {
 }
 
 // RenderCard processa um card específico e gera um arquivo .ts temporário
-func (r *FFmpegRenderer) RenderCard(card models.Card, res models.Size, fps int, outPath string) error {
+func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res models.Size, fps int, outPath string) (err error) {
 	totalFrames := (card.DurationMs / 1000) * fps
 
 	// 32. Configurar bitrate com base na resolução desejada (ex: 8M para 1080p+, 4M para 720p+, 2M para menor)
@@ -49,15 +50,15 @@ func (r *FFmpegRenderer) RenderCard(card models.Card, res models.Size, fps int, 
 	if fadeFrames < 1 {
 		fadeFrames = 1
 	}
-	vfFilter := fmt.Sprintf("fade=t=in:start_frame=0:num_frames=%d,fade=t=out:start_frame=%d:num_frames=%d", fadeFrames, totalFrames-fadeFrames, fadeFrames)
+	vfFilter := fmt.Sprintf("fade=t=in:start_frame=0:nb_frames=%d,fade=t=out:start_frame=%d:nb_frames=%d", fadeFrames, totalFrames-fadeFrames, fadeFrames)
 
-	// 29. Comando FFmpeg esperando imagens no Stdin (Pipe)
-	// 30, 31. Ajuste de codec e pixel format
+	// 29. Comando FFmpeg esperando imagens no Stdin (Pipe) via rawvideo
 	// #nosec G204
-	cmd := exec.Command("ffmpeg",
+	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-y",
-		"-f", "image2pipe",
-		"-vcodec", "png",
+		"-f", "rawvideo",
+		"-pix_fmt", "rgba",
+		"-s", fmt.Sprintf("%dx%d", res.Width, res.Height),
 		"-r", fmt.Sprintf("%d", fps), // 33. Suporte a taxa de quadros (FPS) dinâmica
 		"-i", "-",
 		"-c:v", vcodec,
@@ -81,21 +82,27 @@ func (r *FFmpegRenderer) RenderCard(card models.Card, res models.Size, fps int, 
 	}
 
 	// 28. Otimizar criação do contexto gráfico (reuso de memória)
-	// Criamos apenas uma vez por card e reusamos em todos os frames
 	dc := gg.NewContext(res.Width, res.Height)
 
-	// 47. Testar substituição do encoder PNG padrão por alternativas mais rápidas (BestSpeed)
-	pngEncoder := png.Encoder{
-		CompressionLevel: png.BestSpeed,
-	}
-
-	// 46. Usar buffers redimensionáveis para codificação PNG (sync.Pool)
-	// Adquire e reseta o buffered writer
+	// 46. Usar buffers redimensionáveis para codificação (sync.Pool)
 	bw := bufWriterPool.Get().(*bufio.Writer)
 	bw.Reset(stdin)
+
+	// Usamos named return value (err) para capturar o erro do Wait() no defer de forma limpa e evitar processos zumbis
 	defer func() {
-		_ = bw.Flush()
+		_ = stdin.Close()
 		bufWriterPool.Put(bw)
+		if cmd.Process != nil {
+			waitErr := cmd.Wait()
+			if waitErr != nil {
+				if err != nil {
+					err = fmt.Errorf("%w (log do ffmpeg: %s)", err, stderr.String())
+				} else {
+					// 40. Mapear e tratar erros do FFmpeg com logs legíveis
+					err = fmt.Errorf("ffmpeg falhou: %w, log do ffmpeg: %s", waitErr, stderr.String())
+				}
+			}
+		}
 	}()
 
 	// Loop desenhando os frames na RAM
@@ -103,18 +110,22 @@ func (r *FFmpegRenderer) RenderCard(card models.Card, res models.Size, fps int, 
 		// 45. Otimizar alocação de memória no loop de desenho de frames (GC)
 		DrawCardState(dc, card, res)
 
-		// Envia a imagem pro FFmpeg
-		if err := pngEncoder.Encode(bw, dc.Image()); err != nil {
-			return fmt.Errorf("erro ao codificar png para pipe: %w", err)
+		// Conversão direta para image.RGBA para extração de pixels sem compressão no Go (Zero-copy pixel stream)
+		rgbaImg, ok := dc.Image().(*image.RGBA)
+		if !ok {
+			err = fmt.Errorf("imagem gerada não é do tipo *image.RGBA")
+			return err
 		}
-		_ = bw.Flush() // Garante envio em tempo real pro FFmpeg
+
+		// Envia os pixels crus diretamente pro FFmpeg via pipe
+		if _, writeErr := bw.Write(rgbaImg.Pix); writeErr != nil {
+			err = fmt.Errorf("erro ao escrever pixels no pipe: %w", writeErr)
+			return err
+		}
+		_ = bw.Flush() // Garante envio imediato ao FFmpeg subprocess
 	}
 
-	_ = stdin.Close()
-	if err := cmd.Wait(); err != nil {
-		// 40. Mapear e tratar erros do FFmpeg com logs legíveis
-		return fmt.Errorf("ffmpeg falhou: %w, log do ffmpeg: %s", err, stderr.String())
-	}
+	_ = bw.Flush()
 	return nil
 }
 
@@ -129,16 +140,29 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size) {
 		if el.Type == "text" {
 			dc.SetHexColor(el.Color)
 
+			// Escalamento responsivo do tamanho do texto baseando-se em largura de 1080p de referência
+			scale := float64(res.Width) / 1080.0
+			scaledFontSize := el.FontSize * scale
+			if scaledFontSize < 10 {
+				scaledFontSize = 10 // Limite mínimo de legibilidade
+			}
+
 			// 25. Carregar fonte customizada (stub com fallback)
-			if err := dc.LoadFontFace("assets/fonts/Roboto.ttf", el.FontSize); err != nil {
+			if err := dc.LoadFontFace("assets/fonts/Roboto.ttf", scaledFontSize); err != nil {
 				// Fallback silencioso se não houver fonte (graceful degradation)
 			}
 
-			// 26. Implementar quebra de linha (Word Wrap)
-			maxWidth := float64(res.Width) - el.X - 40 // Margem
+			// 26. Implementar quebra de linha (Word Wrap) responsiva (margem lateral de 15%)
+			maxWidth := float64(res.Width) * 0.85
 			dc.DrawStringWrapped(el.Content, el.X, el.Y, 0.5, 0.5, maxWidth, 1.5, gg.AlignCenter)
 		} else if el.Type == "image" {
 			// 27. Suporte a renderização de imagens estáticas sobrepostas
+			img, err := gg.LoadImage(el.Content)
+			if err != nil {
+				// Fallback gracioso se a imagem não carregar
+				continue
+			}
+			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 		}
 	}
 }
