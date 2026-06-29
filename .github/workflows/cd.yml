@@ -1,0 +1,41 @@
+name: Go CD (Release)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    # 59. Cross-compilar binários para Windows, Linux, macOS
+    - name: Build cross-platform binaries
+      run: |
+        mkdir -p dist
+        GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-linux-amd64 ./cmd/videogen
+        GOOS=windows GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-windows-amd64.exe ./cmd/videogen
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-darwin-amd64 ./cmd/videogen
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-darwin-arm64 ./cmd/videogen
+
+    # 62. Criação automatizada de releases
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/videogen-linux-amd64
+          dist/videogen-windows-amd64.exe
+          dist/videogen-darwin-amd64
+          dist/videogen-darwin-arm64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

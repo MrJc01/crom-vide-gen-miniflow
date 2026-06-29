@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  videogen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Montar diretórios locais para leitura/gravação segura de templates e outputs
+      - ./templates:/home/videogen/templates:ro
+      - ./output:/home/videogen/output:rw
+    environment:
+      - VIDEOGEN_WORKERS=4
+    # 70. Monitorar e limitar recursos (limites da stack)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+    # Comando padrão executando o template de exemplo e cuspindo o mp4 final mapeado no host
+    command: ["-json", "templates/sample_v1.json", "-out", "output/output_final.mp4"]
