@@ -2,43 +2,25 @@
   "template_id": "promo_v1",
   "resolution": { "width": 1080, "height": 1920 },
   "fps": 30,
+  "audio_url": "the_mountain-piano-background-487020.mp3",
   "cards": [
     {
       "id": "card_01",
-      "duration_ms": 3000,
+      "duration_ms": 60000,
       "background_color": "#1A1A1A",
       "elements": [
         {
-          "type": "image",
-          "content": "assets/images/logo.png",
+          "type": "video",
+          "content": "YTDown_YouTube_Como-a-sua-Nostalgia-pode-te-Salvar_Media_WqNjmmAXC_0_004_360p.mp4",
           "x": 540,
-          "y": 500
+          "y": 500,
+          "width": 480,
+          "height": 360
         },
         {
           "type": "text",
           "content": "Super Oferta!",
           "font_size": 80,
-          "color": "#FFFFFF",
-          "x": 540,
-          "y": 1000
-        }
-      ]
-    },
-    {
-      "id": "card_02",
-      "duration_ms": 4000,
-      "background_color": "#E63946",
-      "elements": [
-        {
-          "type": "image",
-          "content": "assets/images/logo.png",
-          "x": 540,
-          "y": 500
-        },
-        {
-          "type": "text",
-          "content": "Apenas R$ 99,00",
-          "font_size": 100,
           "color": "#FFFFFF",
           "x": 540,
           "y": 1000

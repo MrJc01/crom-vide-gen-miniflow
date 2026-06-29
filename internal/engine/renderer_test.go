@@ -82,7 +82,7 @@ func TestRenderer_VisualComparison(t *testing.T) {
 		Elements:        nil,
 	}
 
-	engine.DrawCardState(dc, card, res)
+	engine.DrawCardState(dc, card, res, 0)
 
 	// Gabarito de frames: pixel em (0,0) deve ser vermelho puro
 	c := dc.Image().At(0, 0)
@@ -95,7 +95,7 @@ func TestRenderer_VisualComparison(t *testing.T) {
 
 	// 2. Outra cor para garantir
 	card.BackgroundColor = "#0000FF" // Azul
-	engine.DrawCardState(dc, card, res)
+	engine.DrawCardState(dc, card, res, 0)
 	c = dc.Image().At(0, 0)
 	r, g, b, a = c.RGBA()
 	if r != 0 || g != 0 || b != 0xFFFF || a != 0xFFFF {

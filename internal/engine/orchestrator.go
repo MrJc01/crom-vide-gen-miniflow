@@ -95,11 +95,16 @@ func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string,
 
 	var audioPath string
 	if tmpl.AudioURL != "" {
-		slog.Info("Trilha sonora especificada. Baixando áudio...", "url", tmpl.AudioURL)
-		var err error
-		audioPath, err = utils.DownloadRemoteFile(tmpl.AudioURL, "tmp")
-		if err != nil {
-			return fmt.Errorf("falha ao baixar áudio remoto: %w", err)
+		if strings.HasPrefix(tmpl.AudioURL, "http://") || strings.HasPrefix(tmpl.AudioURL, "https://") {
+			slog.Info("Trilha sonora especificada (remota). Baixando áudio...", "url", tmpl.AudioURL)
+			var err error
+			audioPath, err = utils.DownloadRemoteFile(tmpl.AudioURL, "tmp")
+			if err != nil {
+				return fmt.Errorf("falha ao baixar áudio remoto: %w", err)
+			}
+		} else {
+			slog.Info("Trilha sonora especificada (local). Usando arquivo diretamente...", "path", tmpl.AudioURL)
+			audioPath = tmpl.AudioURL
 		}
 	}
 
@@ -135,10 +140,12 @@ func ConcatVideos(files []string, audioPath string, finalOutput string) error {
 	}
 
 	var cmd *exec.Cmd
-	// 37. Adicionar suporte à injeção de uma trilha de áudio no vídeo final
+	// 37. Adicionar suporte à injeção e mixagem de trilha de áudio de fundo
 	if audioPath != "" {
 		// #nosec G204
-		cmd = exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listPath, "-i", audioPath, "-c:v", "copy", "-c:a", "aac", "-map", "0:v", "-map", "1:a", "-shortest", finalOutput)
+		cmd = exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listPath, "-i", audioPath,
+			"-filter_complex", "[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=2[a]",
+			"-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", finalOutput)
 	} else {
 		// #nosec G204
 		cmd = exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listPath, "-c", "copy", finalOutput)

@@ -73,8 +73,8 @@ func TestTemplateValidation_Failures(t *testing.T) {
 		},
 		{
 			name: "Card Duration Too Long (60s)",
-			jsonContent: `{"template_id": "t1", "resolution": {"width": 1920, "height": 1080}, "fps": 30, "cards": [{"id": "c1", "duration_ms": 60000, "background_color": "#FFFFFF"}]}`,
-			expectError: "duration_ms must be between 1 and 30000 ms for card c1",
+			jsonContent: `{"template_id": "t1", "resolution": {"width": 1920, "height": 1080}, "fps": 30, "cards": [{"id": "c1", "duration_ms": 60001, "background_color": "#FFFFFF"}]}`,
+			expectError: "duration_ms must be between 1 and 60000 ms for card c1",
 		},
 	}
 

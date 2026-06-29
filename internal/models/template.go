@@ -27,12 +27,14 @@ type Card struct {
 }
 
 type Element struct {
-	Type     string  `json:"type"` // "text", "image"
+	Type     string  `json:"type"` // "text", "image", "video"
 	Content  string  `json:"content,omitempty"`
 	FontSize float64 `json:"font_size,omitempty"`
 	Color    string  `json:"color,omitempty"`
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
+	Width    float64 `json:"width,omitempty"`
+	Height   float64 `json:"height,omitempty"`
 }
 
 // Validate checks if the template has the required fields
@@ -66,9 +68,9 @@ func (t *Template) Validate() error {
 			return errors.New("card id must be alphanumeric or underscore only to prevent injection: " + card.ID)
 		}
 
-		// 90. Restringir duração máxima de cada card (ex: max 30s por card)
-		if card.DurationMs <= 0 || card.DurationMs > 30000 {
-			return errors.New("duration_ms must be between 1 and 30000 ms for card " + card.ID)
+		// 90. Restringir duração máxima de cada card (ex: max 60s por card)
+		if card.DurationMs <= 0 || card.DurationMs > 60000 {
+			return errors.New("duration_ms must be between 1 and 60000 ms for card " + card.ID)
 		}
 
 		// 92. Validação estrita de cores Hex via Expressão Regular

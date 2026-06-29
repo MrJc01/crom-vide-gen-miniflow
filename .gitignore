@@ -1,0 +1,27 @@
+# Binários compilados
+/videogen
+
+# Diretórios temporários
+/tmp/
+
+# Arquivos de mídia de saída ou teste
+*.mp4
+*.ts
+*.aac
+*.mp3
+
+# Perf/Profiling
+*.prof
+*.pprof
+cpuprofile
+memprofile
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db

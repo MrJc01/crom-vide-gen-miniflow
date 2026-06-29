@@ -6,7 +6,10 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"videogen/internal/models"
 
@@ -31,7 +34,45 @@ func NewFFmpegRenderer(useHWAccel bool) *FFmpegRenderer {
 func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res models.Size, fps int, outPath string) (err error) {
 	totalFrames := (card.DurationMs / 1000) * fps
 
-	// 32. Configurar bitrate com base na resolução desejada (ex: 8M para 1080p+, 4M para 720p+, 2M para menor)
+	// Crias diretórios temporários para extração de frames de elementos de vídeo se houver
+	for i, el := range card.Elements {
+		if el.Type == "video" {
+			framesDir := fmt.Sprintf("tmp/frames_%s_%d", card.ID, i)
+			_ = os.MkdirAll(framesDir, 0755)
+
+			w := int(el.Width)
+			if w <= 0 {
+				w = 400
+			}
+			h := int(el.Height)
+			if h <= 0 {
+				h = 400
+			}
+
+			// Extrai frames do vídeo no formato frame_%04d.png na resolução e fps apropriados
+			// #nosec G204
+			extractCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-i", el.Content,
+				"-vf", fmt.Sprintf("fps=%d,scale=%d:%d", fps, w, h),
+				filepath.Join(framesDir, "frame_%04d.png"),
+			)
+			if out, err := extractCmd.CombinedOutput(); err != nil {
+				slog.Warn("Falha ao extrair frames do vídeo", "video", el.Content, "erro", err, "output", string(out))
+			}
+
+			// Tenta extrair áudio se houver trilha sonora no vídeo
+			audioFile := fmt.Sprintf("tmp/audio_%s_%d.aac", card.ID, i)
+			// #nosec G204
+			audioCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-i", el.Content,
+				"-vn",
+				"-c:a", "aac",
+				audioFile,
+			)
+			_ = audioCmd.Run() // Ignora erro se o vídeo não tiver áudio
+		}
+	}
+
 	bitrate := "2M"
 	if res.Width >= 1920 || res.Height >= 1920 {
 		bitrate = "8M"
@@ -39,33 +80,35 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 		bitrate = "4M"
 	}
 
-	// 39. Configurar aceleração de hardware (ex: NVENC)
 	vcodec := "libx264"
 	if r.UseHWAccel {
 		vcodec = "h264_nvenc"
 	}
 
-	// 38. Transições básicas (fade in/out) entre vídeos gerados (ex: 0.5s fade no início e fim)
 	fadeFrames := fps / 2
 	if fadeFrames < 1 {
 		fadeFrames = 1
 	}
 	vfFilter := fmt.Sprintf("fade=t=in:start_frame=0:nb_frames=%d,fade=t=out:start_frame=%d:nb_frames=%d", fadeFrames, totalFrames-fadeFrames, fadeFrames)
 
-	// 29. Comando FFmpeg esperando imagens no Stdin (Pipe) via rawvideo
+	// Comando FFmpeg esperando imagens no Stdin (Pipe) via rawvideo e adicionando anullsrc para canal de áudio silencioso contínuo
 	// #nosec G204
 	cmd := exec.CommandContext(ctx, "ffmpeg",
 		"-y",
 		"-f", "rawvideo",
 		"-pix_fmt", "rgba",
 		"-s", fmt.Sprintf("%dx%d", res.Width, res.Height),
-		"-r", fmt.Sprintf("%d", fps), // 33. Suporte a taxa de quadros (FPS) dinâmica
+		"-r", fmt.Sprintf("%d", fps),
 		"-i", "-",
+		"-f", "lavfi",
+		"-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
 		"-c:v", vcodec,
 		"-b:v", bitrate,
 		"-vf", vfFilter,
-		"-preset", "veryfast", // 30. Otimização de velocidade
-		"-pix_fmt", "yuv420p", // 31. Compatibilidade
+		"-c:a", "aac",
+		"-shortest",
+		"-preset", "veryfast",
+		"-pix_fmt", "yuv420p",
 		outPath,
 	)
 
@@ -81,62 +124,103 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 		return fmt.Errorf("erro ao iniciar ffmpeg: %w", err)
 	}
 
-	// 28. Otimizar criação do contexto gráfico (reuso de memória)
 	dc := gg.NewContext(res.Width, res.Height)
 
-	// 46. Usar buffers redimensionáveis para codificação (sync.Pool)
 	bw := bufWriterPool.Get().(*bufio.Writer)
 	bw.Reset(stdin)
 
-	// Usamos named return value (err) para capturar o erro do Wait() no defer de forma limpa e evitar processos zumbis
+	// O retorno nomeado (err) garante que erros do Wait() atualizem o retorno da chamada
 	defer func() {
 		_ = stdin.Close()
 		bufWriterPool.Put(bw)
+
 		if cmd.Process != nil {
 			waitErr := cmd.Wait()
 			if waitErr != nil {
 				if err != nil {
 					err = fmt.Errorf("%w (log do ffmpeg: %s)", err, stderr.String())
 				} else {
-					// 40. Mapear e tratar erros do FFmpeg com logs legíveis
 					err = fmt.Errorf("ffmpeg falhou: %w, log do ffmpeg: %s", waitErr, stderr.String())
 				}
 			}
 		}
+
+		// Remove os diretórios temporários dos frames após a execução do ffmpeg Wait
+		for i, el := range card.Elements {
+			if el.Type == "video" {
+				framesDir := fmt.Sprintf("tmp/frames_%s_%d", card.ID, i)
+				_ = os.RemoveAll(framesDir)
+			}
+		}
 	}()
 
-	// Loop desenhando os frames na RAM
 	for f := 0; f < totalFrames; f++ {
-		// 45. Otimizar alocação de memória no loop de desenho de frames (GC)
-		DrawCardState(dc, card, res)
+		DrawCardState(dc, card, res, f)
 
-		// Conversão direta para image.RGBA para extração de pixels sem compressão no Go (Zero-copy pixel stream)
 		rgbaImg, ok := dc.Image().(*image.RGBA)
 		if !ok {
 			err = fmt.Errorf("imagem gerada não é do tipo *image.RGBA")
 			return err
 		}
 
-		// Envia os pixels crus diretamente pro FFmpeg via pipe
 		if _, writeErr := bw.Write(rgbaImg.Pix); writeErr != nil {
 			err = fmt.Errorf("erro ao escrever pixels no pipe: %w", writeErr)
 			return err
 		}
-		_ = bw.Flush() // Garante envio imediato ao FFmpeg subprocess
+		_ = bw.Flush()
 	}
 
 	_ = bw.Flush()
+
+	// Se houver um áudio extraído, faz o mux dele com o arquivo .ts silencioso recém-gerado!
+	var audioToMerge string
+	for i, el := range card.Elements {
+		if el.Type == "video" {
+			audioFile := fmt.Sprintf("tmp/audio_%s_%d.aac", card.ID, i)
+			if info, err := os.Stat(audioFile); err == nil && info.Size() > 100 {
+				audioToMerge = audioFile
+				break // Pega o primeiro áudio com som
+			}
+		}
+	}
+
+	if audioToMerge != "" {
+		tempTs := outPath + ".temp.ts"
+		// #nosec G204
+		mergeCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
+			"-i", outPath,
+			"-i", audioToMerge,
+			"-c:v", "copy",
+			"-c:a", "aac",
+			"-map", "0:v:0",
+			"-map", "1:a:0",
+			"-shortest",
+			tempTs,
+		)
+		if err := mergeCmd.Run(); err == nil {
+			_ = os.Rename(tempTs, outPath)
+		} else {
+			_ = os.Remove(tempTs)
+		}
+	}
+
+	// Remove os arquivos temporários de áudio
+	for i, el := range card.Elements {
+		if el.Type == "video" {
+			_ = os.Remove(fmt.Sprintf("tmp/audio_%s_%d.aac", card.ID, i))
+		}
+	}
+
 	return nil
 }
 
 // DrawCardState desenha o estado atual do card no contexto do GG
-func DrawCardState(dc *gg.Context, card models.Card, res models.Size) {
+func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int) {
 	// Fundo
 	dc.SetHexColor(card.BackgroundColor)
 	dc.Clear()
 
-	// Desenhar elementos
-	for _, el := range card.Elements {
+	for elIdx, el := range card.Elements {
 		if el.Type == "text" {
 			dc.SetHexColor(el.Color)
 
@@ -159,7 +243,19 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size) {
 			// 27. Suporte a renderização de imagens estáticas sobrepostas
 			img, err := gg.LoadImage(el.Content)
 			if err != nil {
-				// Fallback gracioso se a imagem não carregar
+				continue
+			}
+			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
+		} else if el.Type == "video" {
+			// 27. Suporte a renderização de elementos de vídeo frame a frame
+			framePath := fmt.Sprintf("tmp/frames_%s_%d/frame_%04d.png", card.ID, elIdx, frameIndex+1)
+			if _, err := os.Stat(framePath); err != nil {
+				// Fallback loop/hold: se o vídeo acabou, tenta repetir o primeiro frame
+				framePath = fmt.Sprintf("tmp/frames_%s_%d/frame_0001.png", card.ID, elIdx)
+			}
+
+			img, err := gg.LoadImage(framePath)
+			if err != nil {
 				continue
 			}
 			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
