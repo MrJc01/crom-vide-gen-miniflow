@@ -37,6 +37,7 @@ type Element struct {
 	Height        float64     `json:"height,omitempty"`
 	TextAlign     string      `json:"text_align,omitempty"`
 	StrokeWidth   float64     `json:"stroke_width,omitempty"`
+	Rotation      float64     `json:"rotation,omitempty"`
 	Points        [][]float64 `json:"points,omitempty"` // For polygons: [[x1, y1], [x2, y2]]
 	ShadowColor   string      `json:"shadow_color,omitempty"`
 	ShadowBlur    float64     `json:"shadow_blur,omitempty"`

@@ -245,6 +245,11 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 	dc.Clear()
 
 	for elIdx, el := range card.Elements {
+		dc.Push()
+		if el.Rotation != 0 {
+			dc.RotateAbout(gg.Radians(el.Rotation), el.X, el.Y)
+		}
+
 		if el.Type == "text" {
 			dc.SetHexColor(el.Color)
 
@@ -326,6 +331,7 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 			// 27. Suporte a renderização de imagens estáticas sobrepostas
 			img, err := gg.LoadImage(el.Content)
 			if err != nil {
+				dc.Pop()
 				continue
 			}
 			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
@@ -339,9 +345,19 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 
 			img, err := gg.LoadImage(framePath)
 			if err != nil {
+				// Fallback visual (Placeholder) para Web Preview
+				dc.SetHexColor("#333333")
+				dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+				dc.Fill()
+				
+				dc.SetHexColor("#FFFFFF")
+				dc.DrawStringAnchored("VIDEO PLACEHOLDER", el.X, el.Y, 0.5, 0.5)
+				dc.Pop()
 				continue
 			}
 			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 		}
+		
+		dc.Pop()
 	}
 }
