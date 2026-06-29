@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/pprof"
+	"path/filepath"
 	"syscall"
 	"videogen/internal/engine"
 	"videogen/internal/models"
@@ -20,6 +21,11 @@ import (
 var version = "v0.1.0"
 
 func main() {
+	// Prepara PATH local para encontrar o ffmpeg
+	if absBin, err := filepath.Abs("bin"); err == nil {
+		os.Setenv("PATH", absBin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	}
+
 	if err := run(); err != nil {
 		slog.Error("Erro fatal na execução", "erro", err)
 		os.Exit(1)

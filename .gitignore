@@ -40,3 +40,6 @@ Thumbs.db
 # Go mod (opcionalmente ignorar cache de build)
 vendor/
 go.sum
+
+# Pasta local de binários
+/bin/

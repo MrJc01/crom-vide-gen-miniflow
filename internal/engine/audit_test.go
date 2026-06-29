@@ -32,7 +32,7 @@ func TestAudit_MissingFFmpeg(t *testing.T) {
 	card := models.Card{ID: "card_fail", DurationMs: 1000, BackgroundColor: "#000000"}
 	res := models.Size{Width: 100, Height: 100}
 
-	err := renderer.RenderCard(context.Background(), card, res, 10, "tmp/out.ts")
+	err := renderer.RenderCard(context.Background(), card, res, 10, "tmp/out.mp4")
 	if err == nil {
 		t.Errorf("Esperava erro por ausência do FFmpeg no PATH, mas a execução retornou nil")
 	}
@@ -73,7 +73,7 @@ exit 0
 	res := models.Size{Width: 100, Height: 100} // 100x100
 	fps := 10 // 10 FPS -> 10 frames no total
 
-	outPath := filepath.Join(tmpDir, "card_out.ts")
+	outPath := filepath.Join(tmpDir, "card_out.mp4")
 	err := renderer.RenderCard(context.Background(), card, res, fps, outPath)
 	if err != nil {
 		t.Fatalf("RenderCard falhou com mock: %v", err)
@@ -130,7 +130,7 @@ exit 0
 	card := models.Card{ID: "card_cancel", DurationMs: 1000, BackgroundColor: "#000000"}
 	res := models.Size{Width: 100, Height: 100}
 
-	err := renderer.RenderCard(ctx, card, res, 10, filepath.Join(tmpDir, "cancel.ts"))
+	err := renderer.RenderCard(ctx, card, res, 10, filepath.Join(tmpDir, "cancel.mp4"))
 	if err == nil {
 		t.Errorf("Esperava falha imediata por contexto cancelado, mas retornou nil")
 	}

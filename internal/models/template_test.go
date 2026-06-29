@@ -72,9 +72,9 @@ func TestTemplateValidation_Failures(t *testing.T) {
 			expectError: "card id must be alphanumeric or underscore only to prevent injection: c1;rm -rf /",
 		},
 		{
-			name: "Card Duration Too Long (60s)",
-			jsonContent: `{"template_id": "t1", "resolution": {"width": 1920, "height": 1080}, "fps": 30, "cards": [{"id": "c1", "duration_ms": 60001, "background_color": "#FFFFFF"}]}`,
-			expectError: "duration_ms must be between 1 and 60000 ms for card c1",
+			name: "Card Duration Too Long (30m)",
+			jsonContent: `{"template_id": "t1", "resolution": {"width": 1920, "height": 1080}, "fps": 30, "cards": [{"id": "c1", "duration_ms": 1800001, "background_color": "#FFFFFF"}]}`,
+			expectError: "duration_ms must be between 1 and 1800000 ms for card c1",
 		},
 	}
 

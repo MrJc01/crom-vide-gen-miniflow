@@ -17,6 +17,8 @@ import (
 	"videogen/internal/models"
 
 	"github.com/fogleman/gg"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 var bufWriterPool = sync.Pool{
@@ -52,16 +54,31 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 				h = 400
 			}
 
-			// Extrai frames do vídeo no formato frame_%04d.png na resolução e fps apropriados
+			// Check if file exists or is valid before running ffmpeg
+			if el.Content == "" {
+				slog.Warn("Vídeo sem arquivo (vazio), ignorando extração", "card", card.ID)
+				continue
+			}
+			if !strings.HasPrefix(el.Content, "http://") && !strings.HasPrefix(el.Content, "https://") {
+				if _, err := os.Stat(el.Content); os.IsNotExist(err) {
+					slog.Warn("Vídeo local não encontrado, ignorando extração", "file", el.Content)
+					continue
+				}
+			}
+
+			// Extrai frames do vídeo no formato frame_%04d.jpg na resolução e fps apropriados
 			// #nosec G204
 			extractCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
 				"-t", fmt.Sprintf("%.3f", float64(card.DurationMs)/1000.0),
 				"-i", el.Content,
 				"-vf", fmt.Sprintf("fps=%d,scale=%d:%d", fps, w, h),
-				filepath.Join(framesDir, "frame_%04d.png"),
+				"-q:v", "2",
+				filepath.Join(framesDir, "frame_%04d.jpg"),
 			)
-			if out, err := extractCmd.CombinedOutput(); err != nil {
-				slog.Warn("Falha ao extrair frames do vídeo", "video", el.Content, "erro", err, "output", string(out))
+			out, err := extractCmd.CombinedOutput()
+			if err != nil {
+				slog.Warn("Falha ao extrair frames (ignorando vídeo)", "file", el.Content, "erro", err, "output", string(out))
+				continue
 			}
 
 			// Tenta extrair áudio se houver trilha sonora no vídeo
@@ -193,7 +210,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	}
 
 	if audioToMerge != "" {
-		tempTs := outPath + ".temp.ts"
+		tempMp4 := outPath + ".temp.mp4"
 		// #nosec G204
 		mergeCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
 			"-i", outPath,
@@ -203,12 +220,12 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 			"-map", "0:v:0",
 			"-map", "1:a:0",
 			"-shortest",
-			tempTs,
+			tempMp4,
 		)
 		if err := mergeCmd.Run(); err == nil {
-			_ = os.Rename(tempTs, outPath)
+			_ = os.Rename(tempMp4, outPath)
 		} else {
-			_ = os.Remove(tempTs)
+			_ = os.Remove(tempMp4)
 		}
 	}
 
@@ -337,10 +354,10 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 		} else if el.Type == "video" {
 			// 27. Suporte a renderização de elementos de vídeo frame a frame
-			framePath := fmt.Sprintf("tmp/frames_%s_%d/frame_%04d.png", card.ID, elIdx, frameIndex+1)
+			framePath := fmt.Sprintf("tmp/frames_%s_%d/frame_%04d.jpg", card.ID, elIdx, frameIndex+1)
 			if _, err := os.Stat(framePath); err != nil {
 				// Fallback loop/hold: se o vídeo acabou, tenta repetir o primeiro frame
-				framePath = fmt.Sprintf("tmp/frames_%s_%d/frame_0001.png", card.ID, elIdx)
+				framePath = fmt.Sprintf("tmp/frames_%s_%d/frame_0001.jpg", card.ID, elIdx)
 			}
 
 			img, err := gg.LoadImage(framePath)

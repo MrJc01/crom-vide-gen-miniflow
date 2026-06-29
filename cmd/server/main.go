@@ -12,9 +12,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/fogleman/gg"
+	"videogen/internal/db"
 	"videogen/internal/engine"
 	"videogen/internal/models"
 )
@@ -22,6 +25,16 @@ import (
 const templatesDir = "templates/examples"
 
 func main() {
+	// Prepara PATH local para encontrar o ffmpeg
+	if absBin, err := filepath.Abs("bin"); err == nil {
+		os.Setenv("PATH", absBin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	}
+
+	// Inicializar Banco de Dados JSON
+	if err := db.InitDB(); err != nil {
+		log.Fatalf("Falha ao inicializar DB: %v", err)
+	}
+
 	// Configurar rotas CORS e API
 	mux := http.NewServeMux()
 
@@ -30,6 +43,14 @@ func main() {
 	mux.HandleFunc("/api/preview", handlePreview)
 	mux.HandleFunc("/api/render", handleRender)
 	mux.HandleFunc("/api/upload", handleUpload)
+	
+	// API de Vídeos
+	mux.HandleFunc("/api/videos", handleVideos)
+	mux.HandleFunc("/api/videos/", handleVideoByID)
+
+	// Servir arquivos estáticos dos vídeos gerados
+	os.MkdirAll("outputs", 0755)
+	mux.Handle("/outputs/", http.StripPrefix("/outputs/", http.FileServer(http.Dir("outputs"))))
 
 	// Iniciar servidor
 	port := ":8080"
@@ -41,7 +62,7 @@ func main() {
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == "OPTIONS" {
@@ -184,32 +205,40 @@ func handleRender(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Criar nome de output único ou baseado no template
-	outPath := fmt.Sprintf("output_%s.mp4", tmpl.TemplateID)
+	jobID := fmt.Sprintf("job_%d", time.Now().UnixMilli())
+	outPath := filepath.Join("outputs", fmt.Sprintf("output_%s_%s.mp4", tmpl.TemplateID, jobID))
+
+	job := db.VideoJob{
+		ID:         jobID,
+		TemplateID: tmpl.TemplateID,
+		Status:     "rendering",
+		FilePath:   outPath,
+		Category:   "Uncategorized",
+		Archived:   false,
+	}
+	if err := db.AddVideoJob(job); err != nil {
+		log.Printf("Error saving video job: %v", err)
+	}
 
 	// Rodar em background (Goroutine)
-	go func(t models.Template, output string) {
+	go func(t models.Template, output string, jID string) {
 		log.Printf("Starting background render for template %s to %s", t.TemplateID, output)
 		
-		// Setup renderer dependencies (same as videogen CLI)
-		// We use hwaccel=false for the web API default fallback, or hardcode true if supported
 		renderer := engine.NewFFmpegRenderer(false) 
 		
-		// We can just use context.Background() since it's fire-and-forget for now
-		importContext := r.Context()
-		_ = importContext // Not propagating HTTP context so it doesn't cancel when request ends!
-		
-		// Using 0 for workers to auto-scale to NumCPU
-		err := engine.ProcessVideo(context.Background(), t, output, 0, renderer)
+		err := engine.ProcessVideo(context.Background(), t, output, runtime.NumCPU(), renderer)
 		if err != nil {
 			log.Printf("ERROR rendering video %s: %v", t.TemplateID, err)
+			db.UpdateVideoJobStatus(jID, "error", err.Error())
 		} else {
 			log.Printf("SUCCESS rendering video %s: %v", t.TemplateID, output)
+			db.UpdateVideoJobStatus(jID, "done", "")
 		}
-	}(tmpl, outPath)
+	}(tmpl, outPath, jobID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
-	w.Write([]byte(fmt.Sprintf(`{"status":"accepted", "message":"Renderização iniciada em background! Verifique o terminal.", "output":"%s"}`, outPath)))
+	w.Write([]byte(fmt.Sprintf(`{"status":"accepted", "message":"Renderização iniciada", "job_id":"%s"}`, jobID)))
 }
 
 // POST /api/upload - Recebe um arquivo via multipart/form-data e salva em tmp/uploads/
@@ -271,4 +300,69 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"status":"success", "path":"%s", "duration_ms":%d}`, filePath, durationMs)))
+}
+
+// GET /api/videos - Retorna todos os vídeos
+func handleVideos(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	jobs, err := db.ReadDB()
+	if err != nil {
+		http.Error(w, "Failed to read DB: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jobs)
+}
+
+// GET /api/videos/:id e DELETE /api/videos/:id e PUT /api/videos/:id
+func handleVideoByID(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/api/videos/")
+	if id == "" {
+		http.Error(w, "Missing ID", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		jobs, err := db.ReadDB()
+		if err != nil {
+			http.Error(w, "Failed to read DB", http.StatusInternalServerError)
+			return
+		}
+		if job, ok := jobs[id]; ok {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(job)
+		} else {
+			http.Error(w, "Not found", http.StatusNotFound)
+		}
+	case http.MethodDelete:
+		if err := db.DeleteVideoJob(id); err != nil {
+			http.Error(w, "Failed to delete", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"deleted"}`))
+	case http.MethodPut:
+		var req struct {
+			Category string `json:"category"`
+			Archived bool   `json:"archived"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+		if err := db.UpdateVideoJobMeta(id, req.Category, req.Archived); err != nil {
+			http.Error(w, "Failed to update", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"updated"}`))
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }

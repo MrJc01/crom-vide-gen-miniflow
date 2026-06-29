@@ -1,0 +1,32 @@
+{
+  "job_1782768611234": {
+    "id": "job_1782768611234",
+    "template_id": "breaking_news",
+    "status": "done",
+    "file_path": "outputs/output_breaking_news_job_1782768611234.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T18:30:11.234344517-03:00",
+    "updated_at": "2026-06-29T18:38:27.29347422-03:00"
+  },
+  "job_1782769779837": {
+    "id": "job_1782769779837",
+    "template_id": "breaking_news",
+    "status": "done",
+    "file_path": "outputs/output_breaking_news_job_1782769779837.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T18:49:39.837065977-03:00",
+    "updated_at": "2026-06-29T18:54:48.33014561-03:00"
+  },
+  "job_1782770088459": {
+    "id": "job_1782770088459",
+    "template_id": "breaking_news",
+    "status": "rendering",
+    "file_path": "outputs/output_breaking_news_job_1782770088459.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T18:54:48.459557907-03:00",
+    "updated_at": "2026-06-29T18:54:48.459557967-03:00"
+  }
+}

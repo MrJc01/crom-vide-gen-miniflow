@@ -57,7 +57,7 @@ func TestProcessVideo_Success(t *testing.T) {
 	// Porém, podemos testar que todas as chamadas de RenderCard foram feitas!
 	err := engine.ProcessVideo(context.Background(), tmpl, "output_test.mp4", 2, mock)
 	
-	// Esperamos erro de concatenação se o FFmpeg não estiver no PATH ou mock.ts não existir,
+	// Esperamos erro de concatenação se o FFmpeg não estiver no PATH ou mock.mp4 não existir,
 	// mas o importante é que os cards foram mockados com sucesso!
 	mock.mu.Lock()
 	count := len(mock.renderedCards)

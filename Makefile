@@ -22,7 +22,7 @@ run: build
 clean:
 	@echo "Limpando artefatos e pasta temporária..."
 	rm -f $(BIN_NAME)
-	rm -rf tmp/*.ts tmp/list.txt
+	rm -rf tmp/*.ts tmp/*.mp4 tmp/list.txt
 	rm -f $(OUTPUT_FILE)
 
 docker-build:

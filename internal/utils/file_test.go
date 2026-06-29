@@ -119,11 +119,11 @@ func TestValidateMIMEType(t *testing.T) {
 func TestCleanupTempFiles(t *testing.T) {
 	tempDir := t.TempDir()
 	
-	f1 := filepath.Join(tempDir, "file1.ts")
-	f2 := filepath.Join(tempDir, "file2.ts")
+	f1 := filepath.Join(tempDir, "file1.mp4")
+	f2 := filepath.Join(tempDir, "file2.mp4")
 	
-	os.WriteFile(f1, []byte("ts1"), 0644)
-	os.WriteFile(f2, []byte("ts2"), 0644)
+	os.WriteFile(f1, []byte("mp4-1"), 0644)
+	os.WriteFile(f2, []byte("mp4-2"), 0644)
 
 	if err := utils.CleanupTempFiles(tempDir); err != nil {
 		t.Fatalf("CleanupTempFiles falhou: %v", err)

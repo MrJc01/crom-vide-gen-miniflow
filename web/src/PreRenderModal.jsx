@@ -7,10 +7,20 @@ export default function PreRenderModal({ data, onClose, onRender }) {
 
   useEffect(() => {
     if (data) {
-      setFormData(JSON.parse(JSON.stringify(data)));
+      const initialData = JSON.parse(JSON.stringify(data));
+      // Clear global audio and media contents so they start empty
+      initialData.audio_url = '';
+      initialData.cards.forEach(card => {
+        card.elements.forEach(el => {
+          if (el.type === 'video' || el.type === 'image') {
+            el.content = '';
+          }
+        });
+      });
+      setFormData(initialData);
       
       const initialModes = {};
-      data.cards.forEach((_, idx) => {
+      initialData.cards.forEach((_, idx) => {
         initialModes[idx] = 'auto'; // Default to auto mode
       });
       setDurationModes(initialModes);
@@ -118,13 +128,9 @@ export default function PreRenderModal({ data, onClose, onRender }) {
           <div className="form-group" style={{ marginBottom: '2rem', padding: '1rem', border: '1px dashed var(--accent)', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.05)' }}>
             <label style={{ color: 'var(--accent)', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Música de Fundo Global (Áudio)</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input 
-                type="text" 
-                placeholder="Ex: https://dominio.com/musica.mp3"
-                value={formData.audio_url || ''} 
-                onChange={e => handleGlobalAudioChange(e.target.value)}
-                style={{ flex: 1 }}
-              />
+              <div style={{ flex: 1, padding: '0.5rem', color: '#38bdf8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', alignSelf: 'center', fontSize: '0.9rem' }} title={formData.audio_url}>
+                {formData.audio_url ? `🎵 ${formData.audio_url.split('/').pop()}` : ''}
+              </div>
               <label className="btn" style={{ cursor: 'pointer', background: '#334155', color: '#fff', textAlign: 'center', width: 'auto', display: 'flex', alignItems: 'center' }}>
                 📁 Escolher Arquivo
                 <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, true, null, null)} />
@@ -159,13 +165,14 @@ export default function PreRenderModal({ data, onClose, onRender }) {
                       
                       <input 
                         type="number"
+                        step="0.1"
                         disabled={mode === 'auto'}
-                        value={card.duration_ms || 0}
-                        onChange={(e) => handleManualDuration(cardIdx, e.target.value)}
+                        value={card.duration_ms ? (card.duration_ms / 1000).toFixed(1) : 0}
+                        onChange={(e) => handleManualDuration(cardIdx, parseFloat(e.target.value) * 1000)}
                         style={{ width: '80px', padding: '0.2rem', fontSize: '0.8rem', opacity: mode === 'auto' ? 0.5 : 1 }}
-                        title="Duração em ms"
+                        title="Duração em segundos"
                       />
-                      <span style={{ color: 'var(--text-muted)' }}>ms</span>
+                      <span style={{ color: 'var(--text-muted)' }}>s</span>
                     </div>
                   </div>
 
@@ -180,22 +187,16 @@ export default function PreRenderModal({ data, onClose, onRender }) {
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {item.el.type === 'text' ? (
                             <textarea 
-                              placeholder="Digite o texto final..."
+                              placeholder="Digite o texto final (Opcional)..."
                               value={item.el.content || ''} 
                               onChange={e => handleMediaChange(cardIdx, item.elIdx, e.target.value)} 
                               style={{ flex: 1, padding: '0.75rem', borderRadius: '6px', background: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border)', fontFamily: 'inherit' }}
                               rows={2}
-                              required
                             />
                           ) : (
-                            <input 
-                              type="text" 
-                              placeholder="URL ou Caminho local..."
-                              value={item.el.content || ''} 
-                              onChange={e => handleMediaChange(cardIdx, item.elIdx, e.target.value)} 
-                              style={{ flex: 1 }}
-                              required
-                            />
+                            <div style={{ flex: 1, padding: '0.5rem', color: '#38bdf8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }} title={item.el.content}>
+                              {item.el.content ? `📎 ${item.el.content.split('/').pop()}` : ''}
+                            </div>
                           )}
                           
                           {isMedia && (

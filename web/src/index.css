@@ -279,6 +279,35 @@ input:focus, select:focus {
   align-items: center;
 }
 
+.timeline-action-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.timeline-action-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.timeline-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.timeline-action-btn.delete:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
 .card-number {
   font-size: 0.75rem;
   font-weight: 600;

@@ -76,9 +76,9 @@ func (t *Template) Validate() error {
 			return errors.New("card id must be alphanumeric or underscore only to prevent injection: " + card.ID)
 		}
 
-		// 90. Restringir duração máxima de cada card (ex: max 60s por card)
-		if card.DurationMs <= 0 || card.DurationMs > 60000 {
-			return errors.New("duration_ms must be between 1 and 60000 ms for card " + card.ID)
+		// 90. Restringir duração máxima de cada card (ex: max 30 minutos por card)
+		if card.DurationMs <= 0 || card.DurationMs > 1800000 {
+			return errors.New("duration_ms must be between 1 and 1800000 ms for card " + card.ID)
 		}
 
 		// 92. Validação estrita de cores Hex via Expressão Regular

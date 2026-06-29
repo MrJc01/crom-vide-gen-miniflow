@@ -1,4 +1,4 @@
-export default function Timeline({ cards, selectedCardIdx, onSelectCard, onAddCard, onRemoveCard, onUpdateDuration }) {
+export default function Timeline({ cards, selectedCardIdx, onSelectCard, onAddCard, onRemoveCard, onCloneCard, onMoveCard, onUpdateDuration }) {
   if (!cards) return null;
 
   return (
@@ -16,10 +16,41 @@ export default function Timeline({ cards, selectedCardIdx, onSelectCard, onAddCa
             onClick={() => onSelectCard(idx)}
           >
             <div className="timeline-card-header">
-              <span className="card-number">{idx + 1}</span>
-              {cards.length > 1 && (
-                <button className="delete-card-btn" onClick={(e) => { e.stopPropagation(); onRemoveCard(idx); }}>×</button>
-              )}
+              <span className="card-number">#{idx + 1}</span>
+              <div className="timeline-card-actions" style={{ display: 'flex', gap: '0.2rem' }}>
+                <button 
+                  className="timeline-action-btn" 
+                  title="Clonar Cena" 
+                  onClick={(e) => { e.stopPropagation(); onCloneCard(idx); }}
+                >
+                  ❐
+                </button>
+                <button 
+                  className="timeline-action-btn" 
+                  title="Mover para Esquerda" 
+                  disabled={idx === 0}
+                  onClick={(e) => { e.stopPropagation(); onMoveCard(idx, -1); }}
+                >
+                  ←
+                </button>
+                <button 
+                  className="timeline-action-btn" 
+                  title="Mover para Direita" 
+                  disabled={idx === cards.length - 1}
+                  onClick={(e) => { e.stopPropagation(); onMoveCard(idx, 1); }}
+                >
+                  →
+                </button>
+                {cards.length > 1 && (
+                  <button 
+                    className="timeline-action-btn delete" 
+                    title="Excluir Cena" 
+                    onClick={(e) => { e.stopPropagation(); onRemoveCard(idx); }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
             <div className="timeline-card-preview" style={{ backgroundColor: card.background_color || '#1e293b' }}>
               {/* Simple representation of elements */}

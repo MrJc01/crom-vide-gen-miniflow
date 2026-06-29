@@ -15,7 +15,7 @@ import (
 // 82. Testar graceful degradation quando a fonte não existe
 func TestRenderer_GracefulDegradation(t *testing.T) {
 	tmpDir := t.TempDir()
-	outPath := filepath.Join(tmpDir, "card_out.ts")
+	outPath := filepath.Join(tmpDir, "card_out.mp4")
 
 	// Criar mock do ffmpeg no PATH para evitar falha do exec.Command
 	mockBinDir := filepath.Join(tmpDir, "mockbin")

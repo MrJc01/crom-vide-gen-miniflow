@@ -14,11 +14,15 @@ import (
 	"videogen/internal/utils"
 )
 
+type RenderResult struct {
+	Path string
+	Err  error
+}
+
 // Worker Pool Pattern
-func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results chan<- string, tmpl models.Template, wg *sync.WaitGroup, renderer Renderer) {
+func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results chan<- RenderResult, tmpl models.Template, wg *sync.WaitGroup, renderer Renderer) {
 	defer wg.Done()
 	for card := range jobs {
-		// 52. Prevenir vazamento de goroutines no caso de interrupções
 		select {
 		case <-ctx.Done():
 			slog.Warn("Cancelando render worker", "worker", id)
@@ -26,67 +30,70 @@ func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results 
 		default:
 		}
 
-		outPath := filepath.Join("tmp", fmt.Sprintf("%s.ts", card.ID))
+		outPath := filepath.Join("tmp", fmt.Sprintf("%s.mp4", card.ID))
 		slog.Info("Renderizando card", "worker", id, "card", card.ID, "outPath", outPath)
 
-		// 48. Coletar métricas de tempo de execução por card
 		start := time.Now()
 		err := renderer.RenderCard(ctx, card, tmpl.Resolution, tmpl.FPS, outPath)
 		elapsed := time.Since(start)
 
 		if err != nil {
 			slog.Error("Erro ao renderizar card", "card", card.ID, "erro", err, "duracao_ms", elapsed.Milliseconds())
-			results <- "" // emite vazio em caso de erro (poderia passar struct de erro)
+			results <- RenderResult{Path: "", Err: fmt.Errorf("card %s failed: %v", card.ID, err)}
 			continue
 		}
 		
 		slog.Info("Card renderizado com sucesso", "card", card.ID, "duracao_ms", elapsed.Milliseconds())
-		results <- outPath
+		results <- RenderResult{Path: outPath, Err: nil}
 	}
 }
 
-// 8. ProcessVideo Orquestra as chamadas
+// ProcessVideo Orquestra as chamadas
 func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string, numWorkers int, renderer Renderer) error {
-	// 41. sync.WaitGroup e 42. Worker Pool
 	var wg sync.WaitGroup
 
-	// 12. Pre-baixar todos os assets remotos (imagens dos elementos)
 	for i, card := range tmpl.Cards {
 		for j, el := range card.Elements {
 			if el.Type == "image" && (strings.HasPrefix(el.Content, "http://") || strings.HasPrefix(el.Content, "https://")) {
 				slog.Info("Baixando imagem remota do elemento", "url", el.Content)
 				localPath, err := utils.DownloadRemoteFile(el.Content, "tmp")
 				if err != nil {
-					return fmt.Errorf("erro ao baixar imagem %s: %w", el.Content, err)
+					slog.Warn("Falha ao baixar imagem remota (ignorando)", "url", el.Content, "erro", err)
+				} else {
+					tmpl.Cards[i].Elements[j].Content = localPath
 				}
-				tmpl.Cards[i].Elements[j].Content = localPath
 			}
 		}
 	}
 
 	jobs := make(chan models.Card, len(tmpl.Cards))
-	results := make(chan string, len(tmpl.Cards))
+	results := make(chan RenderResult, len(tmpl.Cards))
 
-	// Inicia os workers
 	for w := 1; w <= numWorkers; w++ {
 		wg.Add(1)
 		go renderWorker(ctx, w, jobs, results, tmpl, &wg, renderer)
 	}
 
-	// Envia os jobs
 	for _, card := range tmpl.Cards {
 		jobs <- card
 	}
-	close(jobs) // Nenhum outro job será enviado
+	close(jobs)
 
 	wg.Wait()
 	close(results)
 
 	var tmpFiles []string
+	var errs []string
 	for res := range results {
-		if res != "" {
-			tmpFiles = append(tmpFiles, res)
+		if res.Err != nil {
+			errs = append(errs, res.Err.Error())
+		} else if res.Path != "" {
+			tmpFiles = append(tmpFiles, res.Path)
 		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("falha na renderização: %s", strings.Join(errs, "; "))
 	}
 
 	if len(tmpFiles) != len(tmpl.Cards) {
@@ -100,11 +107,17 @@ func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string,
 			var err error
 			audioPath, err = utils.DownloadRemoteFile(tmpl.AudioURL, "tmp")
 			if err != nil {
-				return fmt.Errorf("falha ao baixar áudio remoto: %w", err)
+				slog.Warn("Falha ao baixar áudio remoto (ignorando)", "url", tmpl.AudioURL, "erro", err)
+				audioPath = ""
 			}
 		} else {
 			slog.Info("Trilha sonora especificada (local). Usando arquivo diretamente...", "path", tmpl.AudioURL)
-			audioPath = tmpl.AudioURL
+			if _, err := os.Stat(tmpl.AudioURL); os.IsNotExist(err) {
+				slog.Warn("Arquivo de áudio local não encontrado (ignorando)", "path", tmpl.AudioURL)
+				audioPath = ""
+			} else {
+				audioPath = tmpl.AudioURL
+			}
 		}
 	}
 
