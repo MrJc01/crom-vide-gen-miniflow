@@ -58,5 +58,613 @@
       "cards": null,
       "hwaccel": false
     }
+  },
+  "job_1782785958866": {
+    "id": "job_1782785958866",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782785958866.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:19:18.86683873-03:00",
+    "updated_at": "2026-06-29T23:19:18.867617881-03:00",
+    "error": "falha na renderização: card scene_1 failed: erro ao iniciar ffmpeg: exec: \"ffmpeg\": executable file not found in $PATH",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Descrição DETALHADA e precisa do que deve aparecer visualmente na tela: cores, elements, posicionamento, tipografia, animações.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782785958876": {
+    "id": "job_1782785958876",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782785958876.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:19:18.876549142-03:00",
+    "updated_at": "2026-06-29T23:19:18.877127753-03:00",
+    "error": "falha na renderização: card scene_1 failed: erro ao iniciar ffmpeg: exec: \"ffmpeg\": executable file not found in $PATH",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Descrição DETALHADA e precisa do que deve aparecer visualmente na tela: cores, elements, posicionamento, tipografia, animações.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782785958880": {
+    "id": "job_1782785958880",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782785958880.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:19:18.880679322-03:00",
+    "updated_at": "2026-06-29T23:19:18.881280464-03:00",
+    "error": "falha na renderização: card scene_1 failed: erro ao iniciar ffmpeg: exec: \"ffmpeg\": executable file not found in $PATH",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Descrição DETALHADA e precisa do que deve aparecer visualmente na tela: cores, elements, posicionamento, tipografia, animações.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782785958884": {
+    "id": "job_1782785958884",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782785958884.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:19:18.884747257-03:00",
+    "updated_at": "2026-06-29T23:19:18.88537045-03:00",
+    "error": "falha na renderização: card scene_1 failed: erro ao iniciar ffmpeg: exec: \"ffmpeg\": executable file not found in $PATH",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Descrição DETALHADA e precisa do que deve aparecer visualmente na tela: cores, elements, posicionamento, tipografia, animações.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782785958888": {
+    "id": "job_1782785958888",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782785958888.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:19:18.888514636-03:00",
+    "updated_at": "2026-06-29T23:19:18.888957044-03:00",
+    "error": "falha na renderização: card scene_1 failed: erro ao iniciar ffmpeg: exec: \"ffmpeg\": executable file not found in $PATH",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Descrição DETALHADA e precisa do que deve aparecer visualmente na tela: cores, elements, posicionamento, tipografia, animações.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786194030": {
+    "id": "job_1782786194030",
+    "template_id": "scene_1",
+    "status": "error",
+    "file_path": "outputs/output_scene_1_job_1782786194030.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:14.031045465-03:00",
+    "updated_at": "2026-06-29T23:23:26.032361882-03:00",
+    "error": "erro no ffmpeg concat: exit status 1\nOutput: ffmpeg version 4.4.1-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2021 the FFmpeg developers\n  built with gcc 8 (Debian 8.3.0-6)\n  configuration: --enable-gpl --enable-version3 --enable-static --disable-debug --disable-ffplay --disable-indev=sndio --disable-outdev=sndio --cc=gcc --enable-fontconfig --enable-frei0r --enable-gnutls --enable-gmp --enable-libgme --enable-gray --enable-libaom --enable-libfribidi --enable-libass --enable-libvmaf --enable-libfreetype --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-librubberband --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libvorbis --enable-libopus --enable-libtheora --enable-libvidstab --enable-libvo-amrwbenc --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libdav1d --enable-libxvid --enable-libzvbi --enable-libzimg\n  libavutil      56. 70.100 / 56. 70.100\n  libavcodec     58.134.100 / 58.134.100\n  libavformat    58. 76.100 / 58. 76.100\n  libavdevice    58. 13.100 / 58. 13.100\n  libavfilter     7.110.100 /  7.110.100\n  libswscale      5.  9.100 /  5.  9.100\n  libswresample   3.  9.100 /  3.  9.100\n  libpostproc    55.  9.100 / 55.  9.100\n[mov,mp4,m4a,3gp,3g2,mj2 @ 0x37f38b00] moov atom not found\n[concat @ 0x37f2ef40] Impossible to open '/home/j/Documentos/GitHub/crom-vide-gen-miniflow/tmp/scene_1.mp4'\ntmp/list.txt: Invalid data found when processing input\n",
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Tela dividida ao meio verticalmente. Lado esquerdo: Fundo escuro com padrão de circuito eletrônico sutil em azul neon. Sobreposto, um banner retangular vermelho na parte inferior da tela com texto em itálico branco em fonte serifada: 'PLANTÃO DE NOTÍCIAS'. Acima, em destaque, o logotipo estilizado da CromIA em branco e azul. Lado direito: Imagem de um apresentador de telejornal (humanoide robótico com expressão séria), em estúdio futurista, gesticulando levemente. Tarja branca com texto preto e fonte sem serifa: 'CromIA: A Nova Fronteira da IA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786199040": {
+    "id": "job_1782786199040",
+    "template_id": "scene_1",
+    "status": "done",
+    "file_path": "outputs/output_scene_1_job_1782786199040.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:19.041007032-03:00",
+    "updated_at": "2026-06-29T23:23:30.249193952-03:00",
+    "render_duration_ms": 11207,
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Tela dividida ao meio verticalmente. Lado esquerdo: Fundo escuro com padrão de circuito eletrônico sutil em azul neon. Sobreposto, um banner retangular vermelho na parte inferior da tela com texto em itálico branco em fonte serifada: 'PLANTÃO DE NOTÍCIAS'. Acima, em destaque, o logotipo estilizado da CromIA em branco e azul. Lado direito: Imagem de um apresentador de telejornal (humanoide robótico com expressão séria), em estúdio futurista, gesticulando levemente. Tarja branca com texto preto e fonte sem serifa: 'CromIA: A Nova Fronteira da IA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786204041": {
+    "id": "job_1782786204041",
+    "template_id": "scene_1",
+    "status": "done",
+    "file_path": "outputs/output_scene_1_job_1782786204041.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:24.042253283-03:00",
+    "updated_at": "2026-06-29T23:23:43.808829174-03:00",
+    "render_duration_ms": 19373,
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Tela dividida ao meio verticalmente. Lado esquerdo: Fundo escuro com padrão de circuito eletrônico sutil em azul neon. Sobreposto, um banner retangular vermelho na parte inferior da tela com texto em itálico branco em fonte serifada: 'PLANTÃO DE NOTÍCIAS'. Acima, em destaque, o logotipo estilizado da CromIA em branco e azul. Lado direito: Imagem de um apresentador de telejornal (humanoide robótico com expressão séria), em estúdio futurista, gesticulando levemente. Tarja branca com texto preto e fonte sem serifa: 'CromIA: A Nova Fronteira da IA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786206691": {
+    "id": "job_1782786206691",
+    "template_id": "scene_1",
+    "status": "done",
+    "file_path": "outputs/output_scene_1_job_1782786206691.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:26.691421653-03:00",
+    "updated_at": "2026-06-29T23:23:44.207807808-03:00",
+    "render_duration_ms": 16917,
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Tela dividida ao meio verticalmente. Lado esquerdo: Fundo escuro com padrão de circuito eletrônico sutil em azul neon. Sobreposto, um banner retangular vermelho na parte inferior da tela com texto em itálico branco em fonte serifada: 'PLANTÃO DE NOTÍCIAS'. Acima, em destaque, o logotipo estilizado da CromIA em branco e azul. Lado direito: Imagem de um apresentador de telejornal (humanoide robótico com expressão séria), em estúdio futurista, gesticulando levemente. Tarja branca com texto preto e fonte sem serifa: 'CromIA: A Nova Fronteira da IA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786209038": {
+    "id": "job_1782786209038",
+    "template_id": "scene_1",
+    "status": "done",
+    "file_path": "outputs/output_scene_1_job_1782786209038.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:29.038843327-03:00",
+    "updated_at": "2026-06-29T23:23:44.37056332-03:00",
+    "render_duration_ms": 15273,
+    "template": {
+      "template_id": "scene_1",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_1",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Tela dividida ao meio verticalmente. Lado esquerdo: Fundo escuro com padrão de circuito eletrônico sutil em azul neon. Sobreposto, um banner retangular vermelho na parte inferior da tela com texto em itálico branco em fonte serifada: 'PLANTÃO DE NOTÍCIAS'. Acima, em destaque, o logotipo estilizado da CromIA em branco e azul. Lado direito: Imagem de um apresentador de telejornal (humanoide robótico com expressão séria), em estúdio futurista, gesticulando levemente. Tarja branca com texto preto e fonte sem serifa: 'CromIA: A Nova Fronteira da IA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786217557": {
+    "id": "job_1782786217557",
+    "template_id": "scene_2",
+    "status": "done",
+    "file_path": "outputs/output_scene_2_job_1782786217557.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:37.557947367-03:00",
+    "updated_at": "2026-06-29T23:24:04.599807029-03:00",
+    "render_duration_ms": 27040,
+    "template": {
+      "template_id": "scene_2",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_2",
+          "duration_ms": 25000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Cena com foco em gráficos e animações. Tela principal mostra um infográfico animado, onde cubos interconectados (representando agentes) se movem fluidamente, ilustrando uma rede descentralizada. Texto dinâmico aparece ao lado dos cubos: 'Agentes Autônomos', 'Operação Local', 'Segurança Aprimorada'. Linhas de código em efeito 'Matrix' fluem ao fundo. Na parte inferior, uma tarja horizontal branca com detalhes em vermelho, exibindo subtítulos em fonte sem serifa: 'Descentralização e Controle: O Poder da CromIA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786229159": {
+    "id": "job_1782786229159",
+    "template_id": "scene_2",
+    "status": "done",
+    "file_path": "outputs/output_scene_2_job_1782786229159.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:49.159427247-03:00",
+    "updated_at": "2026-06-29T23:24:18.058962436-03:00",
+    "render_duration_ms": 28898,
+    "template": {
+      "template_id": "scene_2",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_2",
+          "duration_ms": 25000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Cena com foco em gráficos e animações. Tela principal mostra um infográfico animado, onde cubos interconectados (representando agentes) se movem fluidamente, ilustrando uma rede descentralizada. Texto dinâmico aparece ao lado dos cubos: 'Agentes Autônomos', 'Operação Local', 'Segurança Aprimorada'. Linhas de código em efeito 'Matrix' fluem ao fundo. Na parte inferior, uma tarja horizontal branca com detalhes em vermelho, exibindo subtítulos em fonte sem serifa: 'Descentralização e Controle: O Poder da CromIA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786229162": {
+    "id": "job_1782786229162",
+    "template_id": "scene_2",
+    "status": "done",
+    "file_path": "outputs/output_scene_2_job_1782786229162.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:23:49.163406139-03:00",
+    "updated_at": "2026-06-29T23:24:17.97463696-03:00",
+    "render_duration_ms": 28810,
+    "template": {
+      "template_id": "scene_2",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_2",
+          "duration_ms": 25000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Cena com foco em gráficos e animações. Tela principal mostra um infográfico animado, onde cubos interconectados (representando agentes) se movem fluidamente, ilustrando uma rede descentralizada. Texto dinâmico aparece ao lado dos cubos: 'Agentes Autônomos', 'Operação Local', 'Segurança Aprimorada'. Linhas de código em efeito 'Matrix' fluem ao fundo. Na parte inferior, uma tarja horizontal branca com detalhes em vermelho, exibindo subtítulos em fonte sem serifa: 'Descentralização e Controle: O Poder da CromIA'.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786250698": {
+    "id": "job_1782786250698",
+    "template_id": "scene_3",
+    "status": "error",
+    "file_path": "outputs/output_scene_3_job_1782786250698.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:24:10.699178475-03:00",
+    "updated_at": "2026-06-29T23:24:23.761849927-03:00",
+    "error": "erro no ffmpeg concat: exit status 1\nOutput: ffmpeg version 4.4.1-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2021 the FFmpeg developers\n  built with gcc 8 (Debian 8.3.0-6)\n  configuration: --enable-gpl --enable-version3 --enable-static --disable-debug --disable-ffplay --disable-indev=sndio --disable-outdev=sndio --cc=gcc --enable-fontconfig --enable-frei0r --enable-gnutls --enable-gmp --enable-libgme --enable-gray --enable-libaom --enable-libfribidi --enable-libass --enable-libvmaf --enable-libfreetype --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-librubberband --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libvorbis --enable-libopus --enable-libtheora --enable-libvidstab --enable-libvo-amrwbenc --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libdav1d --enable-libxvid --enable-libzvbi --enable-libzimg\n  libavutil      56. 70.100 / 56. 70.100\n  libavcodec     58.134.100 / 58.134.100\n  libavformat    58. 76.100 / 58. 76.100\n  libavdevice    58. 13.100 / 58. 13.100\n  libavfilter     7.110.100 /  7.110.100\n  libswscale      5.  9.100 /  5.  9.100\n  libswresample   3.  9.100 /  3.  9.100\n  libpostproc    55.  9.100 / 55.  9.100\n[mov,mp4,m4a,3gp,3g2,mj2 @ 0x848cb00] moov atom not found\n[concat @ 0x8482f40] Impossible to open '/home/j/Documentos/GitHub/crom-vide-gen-miniflow/tmp/scene_3.mp4'\ntmp/list.txt: Invalid data found when processing input\n",
+    "template": {
+      "template_id": "scene_3",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_3",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Ambiente de escritório moderno e iluminado com programadores trabalhando em telas de computador que exibem linhas de código e gráficos abstratos de IA. Acima das telas, hologramas de interfaces de usuário interativas se formam. No canto inferior esquerdo, uma tarja vermelha com texto branco: 'PÚBLICO-ALVO: DESENVOLVEDORES E ENTUSIASTAS'. No canto inferior direito, outra tarja branca com texto vermelho: 'Revolução Local: O Próximo Nível da IA'. O logotipo da CromIA aparece no canto superior direito, pulsando suavemente.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786263559": {
+    "id": "job_1782786263559",
+    "template_id": "scene_3",
+    "status": "done",
+    "file_path": "outputs/output_scene_3_job_1782786263559.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:24:23.559516648-03:00",
+    "updated_at": "2026-06-29T23:24:39.201517881-03:00",
+    "render_duration_ms": 15641,
+    "template": {
+      "template_id": "scene_3",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_3",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Ambiente de escritório moderno e iluminado com programadores trabalhando em telas de computador que exibem linhas de código e gráficos abstratos de IA. Acima das telas, hologramas de interfaces de usuário interativas se formam. No canto inferior esquerdo, uma tarja vermelha com texto branco: 'PÚBLICO-ALVO: DESENVOLVEDORES E ENTUSIASTAS'. No canto inferior direito, outra tarja branca com texto vermelho: 'Revolução Local: O Próximo Nível da IA'. O logotipo da CromIA aparece no canto superior direito, pulsando suavemente.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
+  },
+  "job_1782786263564": {
+    "id": "job_1782786263564",
+    "template_id": "scene_3",
+    "status": "done",
+    "file_path": "outputs/output_scene_3_job_1782786263564.mp4",
+    "category": "Uncategorized",
+    "archived": false,
+    "created_at": "2026-06-29T23:24:23.565406322-03:00",
+    "updated_at": "2026-06-29T23:24:39.193848969-03:00",
+    "render_duration_ms": 15627,
+    "template": {
+      "template_id": "scene_3",
+      "resolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "fps": 30,
+      "cards": [
+        {
+          "id": "scene_3",
+          "duration_ms": 15000,
+          "background_color": "#000000",
+          "elements": [
+            {
+              "type": "text",
+              "content": "Ambiente de escritório moderno e iluminado com programadores trabalhando em telas de computador que exibem linhas de código e gráficos abstratos de IA. Acima das telas, hologramas de interfaces de usuário interativas se formam. No canto inferior esquerdo, uma tarja vermelha com texto branco: 'PÚBLICO-ALVO: DESENVOLVEDORES E ENTUSIASTAS'. No canto inferior direito, outra tarja branca com texto vermelho: 'Revolução Local: O Próximo Nível da IA'. O logotipo da CromIA aparece no canto superior direito, pulsando suavemente.",
+              "font_size": 32,
+              "color": "#ffffff",
+              "x": 100,
+              "y": 100
+            }
+          ]
+        }
+      ],
+      "hwaccel": false,
+      "jpeg_quality": 2
+    }
   }
 }

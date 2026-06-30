@@ -134,6 +134,18 @@ func run() error {
 		return fmt.Errorf("erro ao fazer parse do JSON: %w", err)
 	}
 
+	absJsonPath, err := filepath.Abs(*jsonPath)
+	if err != nil {
+		return fmt.Errorf("erro ao obter caminho absoluto do JSON: %w", err)
+	}
+	workspaceDir := filepath.Dir(absJsonPath)
+
+	engine.ResolveRelativePaths(&template, workspaceDir)
+
+	if err := engine.ResolveNarrationAndDurations(ctx, &template); err != nil {
+		return fmt.Errorf("erro ao processar narração e durações: %w", err)
+	}
+
 	if err := template.Validate(); err != nil {
 		return fmt.Errorf("JSON inválido: %w", err)
 	}

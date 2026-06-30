@@ -22,11 +22,19 @@ type Size struct {
 	Height int `json:"height"`
 }
 
+type VoiceConfig struct {
+	Lang  string  `json:"lang,omitempty"`
+	Speed float64 `json:"speed,omitempty"`
+}
+
 type Card struct {
-	ID              string    `json:"id"`
-	DurationMs      int       `json:"duration_ms"`
-	BackgroundColor string    `json:"background_color"`
-	Elements        []Element `json:"elements"`
+	ID              string       `json:"id"`
+	DurationMs      int          `json:"duration_ms"`
+	BackgroundColor string       `json:"background_color"`
+	Elements        []Element    `json:"elements"`
+	Narration       string       `json:"narration,omitempty"`
+	Voice           *VoiceConfig `json:"voice,omitempty"`
+	DurationMode    string       `json:"duration_mode,omitempty"` // "manual", "video", "narration"
 }
 
 type Element struct {

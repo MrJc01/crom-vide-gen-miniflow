@@ -246,31 +246,68 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 		}
 	}
 
-	// Se houver um áudio extraído, faz o mux dele com o arquivo .ts silencioso recém-gerado!
-	var audioToMerge string
+	// Se houver um áudio extraído ou TTS, faz o mux dele com o arquivo .ts silencioso recém-gerado!
+	var videoAudio string
 	for i, el := range card.Elements {
 		if el.Type == "video" {
 			audioFile := fmt.Sprintf("tmp/audio_%s_%d.aac", card.ID, i)
 			if info, err := os.Stat(audioFile); err == nil && info.Size() > 100 {
-				audioToMerge = audioFile
+				videoAudio = audioFile
 				break // Pega o primeiro áudio com som
 			}
 		}
 	}
 
-	if audioToMerge != "" {
+	ttsFile := filepath.Join("tmp", fmt.Sprintf("tts_%s.mp3", card.ID))
+	hasTTS := false
+	if info, err := os.Stat(ttsFile); err == nil && info.Size() > 100 {
+		hasTTS = true
+	}
+
+	if hasTTS || videoAudio != "" {
 		tempMp4 := outPath + ".temp.mp4"
-		// #nosec G204
-		mergeCmd := exec.CommandContext(ctx, "ffmpeg", "-y",
-			"-i", outPath,
-			"-i", audioToMerge,
-			"-c:v", "copy",
-			"-c:a", "aac",
-			"-map", "0:v:0",
-			"-map", "1:a:0",
-			"-shortest",
-			tempMp4,
-		)
+		var mergeCmd *exec.Cmd
+		
+		if hasTTS && videoAudio != "" {
+			// #nosec G204
+			mergeCmd = exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-i", outPath,
+				"-i", ttsFile,
+				"-i", videoAudio,
+				"-filter_complex", "[1:a][2:a]amix=inputs=2:duration=first[a]",
+				"-c:v", "copy",
+				"-c:a", "aac",
+				"-map", "0:v:0",
+				"-map", "[a]",
+				"-shortest",
+				tempMp4,
+			)
+		} else if hasTTS {
+			// #nosec G204
+			mergeCmd = exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-i", outPath,
+				"-i", ttsFile,
+				"-c:v", "copy",
+				"-c:a", "aac",
+				"-map", "0:v:0",
+				"-map", "1:a:0",
+				"-shortest",
+				tempMp4,
+			)
+		} else {
+			// #nosec G204
+			mergeCmd = exec.CommandContext(ctx, "ffmpeg", "-y",
+				"-i", outPath,
+				"-i", videoAudio,
+				"-c:v", "copy",
+				"-c:a", "aac",
+				"-map", "0:v:0",
+				"-map", "1:a:0",
+				"-shortest",
+				tempMp4,
+			)
+		}
+
 		if err := mergeCmd.Run(); err == nil {
 			_ = os.Rename(tempMp4, outPath)
 		} else {
@@ -310,8 +347,13 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 	dc.SetHexColor(card.BackgroundColor)
 	dc.Clear()
 
+	centerX := float64(res.Width) / 2.0
+	centerY := float64(res.Height) / 2.0
+
 	for elIdx, el := range card.Elements {
 		dc.Push()
+		dc.Translate(centerX, centerY)
+
 		if el.Rotation != 0 {
 			dc.RotateAbout(gg.Radians(el.Rotation), el.X, el.Y)
 		}
