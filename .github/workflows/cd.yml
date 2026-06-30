@@ -19,23 +19,39 @@ jobs:
       with:
         go-version: '1.22'
 
-    # 59. Cross-compilar binários para Windows, Linux, macOS
+    # Cross-compilar binários CLI e Server para Windows, Linux, macOS
     - name: Build cross-platform binaries
       run: |
         mkdir -p dist
-        GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-linux-amd64 ./cmd/videogen
-        GOOS=windows GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-windows-amd64.exe ./cmd/videogen
-        GOOS=darwin GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-darwin-amd64 ./cmd/videogen
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-darwin-arm64 ./cmd/videogen
 
-    # 62. Criação automatizada de releases
+        # CLI videogen
+        GOOS=linux   GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-linux-amd64            ./cmd/videogen
+        GOOS=linux   GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-linux-arm64            ./cmd/videogen
+        GOOS=windows GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-windows-amd64.exe      ./cmd/videogen
+        GOOS=darwin  GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-darwin-amd64           ./cmd/videogen
+        GOOS=darwin  GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-darwin-arm64           ./cmd/videogen
+
+        # Server API
+        GOOS=linux   GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-server-linux-amd64     ./cmd/server
+        GOOS=linux   GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-server-linux-arm64     ./cmd/server
+        GOOS=windows GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-server-windows-amd64.exe ./cmd/server
+        GOOS=darwin  GOARCH=amd64 go build -ldflags="-w -s" -o dist/videogen-server-darwin-amd64    ./cmd/server
+        GOOS=darwin  GOARCH=arm64 go build -ldflags="-w -s" -o dist/videogen-server-darwin-arm64    ./cmd/server
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
+        generate_release_notes: true
         files: |
           dist/videogen-linux-amd64
+          dist/videogen-linux-arm64
           dist/videogen-windows-amd64.exe
           dist/videogen-darwin-amd64
           dist/videogen-darwin-arm64
+          dist/videogen-server-linux-amd64
+          dist/videogen-server-linux-arm64
+          dist/videogen-server-windows-amd64.exe
+          dist/videogen-server-darwin-amd64
+          dist/videogen-server-darwin-arm64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
