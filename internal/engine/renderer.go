@@ -341,7 +341,6 @@ func parseHexColor(s string) color.Color {
 	return c
 }
 
-// DrawCardState desenha um quadro específico de um Card com cache de fontes e imagens
 func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int, imageCache map[string]image.Image, robotoFont *truetype.Font) {
 	// Fundo
 	dc.SetHexColor(card.BackgroundColor)
@@ -350,20 +349,140 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 	centerX := float64(res.Width) / 2.0
 	centerY := float64(res.Height) / 2.0
 
+	isPortrait := res.Height > res.Width
+	scaleX := float64(res.Width) / 1920.0
+	scaleY := float64(res.Height) / 1080.0
+
+	refWidth := 1920.0
+	if isPortrait {
+		refWidth = 1080.0
+	}
+
 	for elIdx, el := range card.Elements {
 		dc.Push()
 		dc.Translate(centerX, centerY)
 
-		if el.Rotation != 0 {
-			dc.RotateAbout(gg.Radians(el.Rotation), el.X, el.Y)
+		// Copia o elemento para aplicar ajustes responsivos sem modificar a estrutura original
+		resEl := el
+
+		if card.TemplateName != "" {
+			if isPortrait {
+				// Ajustes para modo retrato (vertical) nos templates
+				switch card.TemplateName {
+				case "intro":
+					if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+						resEl.Width = float64(res.Width)
+						resEl.Height = float64(res.Height)
+					} else if resEl.Type == "text" {
+						resEl.X = 0
+						resEl.TextAlign = "center"
+						if resEl.FontSize == 72 { // Title
+							resEl.Y = -float64(res.Height) * 0.15
+							resEl.FontSize = 56
+						} else if resEl.FontSize == 40 { // Subtitle
+							resEl.Y = float64(res.Height) * 0.10
+							resEl.FontSize = 32
+						}
+					}
+				case "quote":
+					if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+						resEl.Width = float64(res.Width)
+						resEl.Height = float64(res.Height)
+					} else if resEl.Type == "text" {
+						resEl.X = 0
+						resEl.TextAlign = "center"
+						if strings.HasPrefix(resEl.Content, "\"") || resEl.FontSize == 54 { // Quote
+							resEl.Y = -float64(res.Height) * 0.08
+							resEl.FontSize = 42
+						} else { // Author
+							resEl.Y = float64(res.Height) * 0.15
+							resEl.FontSize = 28
+						}
+					}
+				case "outro":
+					if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+						resEl.Width = float64(res.Width)
+						resEl.Height = float64(res.Height)
+					} else if resEl.Type == "image" { // Logo
+						resEl.X = 0
+						resEl.Y = -float64(res.Height) * 0.15
+						resEl.Width = float64(res.Width) * 0.4
+						resEl.Height = float64(res.Width) * 0.4
+					} else if resEl.Type == "text" {
+						resEl.X = 0
+						resEl.TextAlign = "center"
+						if resEl.FontSize == 54 { // Title
+							resEl.Y = float64(res.Height) * 0.12
+							resEl.FontSize = 42
+						} else if resEl.FontSize == 36 { // Subtitle
+							resEl.Y = float64(res.Height) * 0.22
+							resEl.FontSize = 28
+						}
+					}
+				case "image_text":
+					if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+						resEl.Width = float64(res.Width)
+						resEl.Height = float64(res.Height)
+					} else if resEl.Type == "image" {
+						resEl.X = 0
+						resEl.Y = -float64(res.Height) * 0.18
+						resEl.Width = float64(res.Width) * 0.65
+						resEl.Height = float64(res.Width) * 0.65
+					} else if resEl.Type == "text" {
+						resEl.X = 0
+						resEl.TextAlign = "center"
+						if resEl.FontSize == 60 { // Title
+							resEl.Y = float64(res.Height) * 0.15
+							resEl.FontSize = 44
+						} else if resEl.FontSize == 36 { // Paragraph text
+							resEl.Y = float64(res.Height) * 0.28
+							resEl.FontSize = 26
+						}
+					}
+				}
+			} else {
+				// Ajustes para modo paisagem (landscape) nos templates
+				if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+					resEl.Width = float64(res.Width)
+					resEl.Height = float64(res.Height)
+				} else {
+					resEl.X = resEl.X * scaleX
+					resEl.Y = resEl.Y * scaleY
+					resEl.Width = resEl.Width * scaleX
+					resEl.Height = resEl.Height * scaleY
+				}
+			}
+		} else {
+			// Elementos customizados (sem template)
+			// Detecta se usa coordenadas absolutas e converte para relativas ao centro
+			if resEl.X > 0 && resEl.X <= float64(res.Width) && resEl.Y > 0 && resEl.Y <= float64(res.Height) {
+				resEl.X = resEl.X - centerX
+				resEl.Y = resEl.Y - centerY
+			} else {
+				// Se já forem relativas, aplica o escalamento proporcional
+				resEl.X = resEl.X * scaleX
+				resEl.Y = resEl.Y * scaleY
+			}
+
+			if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
+				resEl.Width = float64(res.Width)
+				resEl.Height = float64(res.Height)
+			} else {
+				resEl.Width = resEl.Width * scaleX
+				resEl.Height = resEl.Height * scaleY
+			}
 		}
 
-		if el.Type == "text" {
-			dc.SetHexColor(el.Color)
+		if resEl.Rotation != 0 {
+			dc.RotateAbout(gg.Radians(resEl.Rotation), resEl.X, resEl.Y)
+		}
 
-			// Escalamento responsivo do tamanho do texto baseando-se em largura de 1080p de referência
-			scale := float64(res.Width) / 1080.0
-			scaledFontSize := el.FontSize * scale
+		if resEl.Type == "text" {
+			dc.SetHexColor(resEl.Color)
+
+			// Escalamento responsivo do tamanho do texto baseando-se no refWidth
+			scale := float64(res.Width) / refWidth
+			scaledFontSize := resEl.FontSize * scale
 			if scaledFontSize < 10 {
 				scaledFontSize = 10 // Limite mínimo de legibilidade
 			}
@@ -384,32 +503,53 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 				}
 			}
 
-			// 26. Implementar quebra de linha (Word Wrap) responsiva (margem lateral de 15%)
-			maxWidth := float64(res.Width) * 0.85
 			align := gg.AlignCenter
 			ax, ay := 0.5, 0.5
-			if el.TextAlign == "left" {
+			if resEl.TextAlign == "left" {
 				align = gg.AlignLeft
 				ax = 0.0
-			} else if el.TextAlign == "right" {
+			} else if resEl.TextAlign == "right" {
 				align = gg.AlignRight
 				ax = 1.0
 			}
-			if el.ShadowColor != "" {
-				// Drop shadow (hard shadow based on offset)
-				dc.SetHexColor(el.ShadowColor)
-				dc.DrawStringWrapped(el.Content, el.X+el.ShadowOffsetX, el.Y+el.ShadowOffsetY, ax, ay, maxWidth, 1.5, align)
-				// Revert color for main text
-				dc.SetHexColor(el.Color)
+
+			// Calcula o maxWidth responsivo com base no alinhamento e posição X para evitar estouro
+			padding := float64(res.Width) * 0.05
+			var maxWidth float64
+
+			absX := resEl.X
+			if absX < 0 {
+				absX = -absX
 			}
-			dc.DrawStringWrapped(el.Content, el.X, el.Y, ax, ay, maxWidth, 1.5, align)
-		} else if el.Type == "rect" {
+
+			if align == gg.AlignLeft {
+				maxWidth = (float64(res.Width) / 2.0) - resEl.X - padding
+			} else if align == gg.AlignRight {
+				maxWidth = (float64(res.Width) / 2.0) + resEl.X - padding
+			} else {
+				distToEdge := (float64(res.Width) / 2.0) - absX
+				maxWidth = 2.0*distToEdge - padding
+			}
+
+			minWidth := float64(res.Width) * 0.3
+			if maxWidth < minWidth {
+				maxWidth = minWidth
+			}
+
+			if resEl.ShadowColor != "" {
+				// Drop shadow (hard shadow based on offset)
+				dc.SetHexColor(resEl.ShadowColor)
+				dc.DrawStringWrapped(resEl.Content, resEl.X+resEl.ShadowOffsetX, resEl.Y+resEl.ShadowOffsetY, ax, ay, maxWidth, 1.5, align)
+				// Revert color for main text
+				dc.SetHexColor(resEl.Color)
+			}
+			dc.DrawStringWrapped(resEl.Content, resEl.X, resEl.Y, ax, ay, maxWidth, 1.5, align)
+		} else if resEl.Type == "rect" {
 			// Suporte a renderização de retângulos/banners com gradientes 3D
-			if strings.HasPrefix(el.Color, "gradient:") {
-				colors := strings.Split(strings.TrimPrefix(el.Color, "gradient:"), ",")
+			if strings.HasPrefix(resEl.Color, "gradient:") {
+				colors := strings.Split(strings.TrimPrefix(resEl.Color, "gradient:"), ",")
 				if len(colors) == 2 {
-					grad := gg.NewLinearGradient(el.X, el.Y-el.Height/2, el.X, el.Y+el.Height/2)
-					// Helper básico de hex local se necessário, mas vamos assumir que ParseHexColor não falhe
+					grad := gg.NewLinearGradient(resEl.X, resEl.Y-resEl.Height/2, resEl.X, resEl.Y+resEl.Height/2)
 					c1 := parseHexColor(colors[0])
 					c2 := parseHexColor(colors[1])
 					grad.AddColorStop(0, c1)
@@ -417,70 +557,80 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 					dc.SetFillStyle(grad)
 				}
 			} else {
-				dc.SetHexColor(el.Color)
+				dc.SetHexColor(resEl.Color)
 			}
-			dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+			dc.DrawRectangle(resEl.X-resEl.Width/2, resEl.Y-resEl.Height/2, resEl.Width, resEl.Height)
 			dc.Fill()
-		} else if el.Type == "polygon" {
-			if len(el.Points) > 2 {
-				dc.SetHexColor(el.Color)
-				dc.MoveTo(el.Points[0][0], el.Points[0][1])
-				for i := 1; i < len(el.Points); i++ {
-					dc.LineTo(el.Points[i][0], el.Points[i][1])
+		} else if resEl.Type == "polygon" {
+			if len(resEl.Points) > 2 {
+				dc.SetHexColor(resEl.Color)
+				dc.MoveTo(resEl.Points[0][0], resEl.Points[0][1])
+				for i := 1; i < len(resEl.Points); i++ {
+					dc.LineTo(resEl.Points[i][0], resEl.Points[i][1])
 				}
 				dc.ClosePath()
 				dc.Fill()
 			}
-		} else if el.Type == "circle" {
-			// Suporte a círculos (ex: dot de notificação/gravação)
-			dc.SetHexColor(el.Color)
-			dc.DrawCircle(el.X, el.Y, el.Width)
+		} else if resEl.Type == "circle" {
+			dc.SetHexColor(resEl.Color)
+			dc.DrawCircle(resEl.X, resEl.Y, resEl.Width)
 			dc.Fill()
-		} else if el.Type == "frame" {
-			// Suporte a molduras vazadas
-			dc.SetHexColor(el.Color)
-			strokeWidth := el.StrokeWidth
+		} else if resEl.Type == "frame" {
+			dc.SetHexColor(resEl.Color)
+			strokeWidth := resEl.StrokeWidth
 			if strokeWidth <= 0 {
 				strokeWidth = 5.0
 			}
 			dc.SetLineWidth(strokeWidth)
-			dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+			dc.DrawRectangle(resEl.X-resEl.Width/2, resEl.Y-resEl.Height/2, resEl.Width, resEl.Height)
 			dc.Stroke()
-		} else if el.Type == "image" {
-			// Utiliza cache pré-carregado de imagens estáticas
-			if img, exists := imageCache[el.Content]; exists {
-				dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
-			} else {
-				img, err := gg.LoadImage(el.Content)
+		} else if resEl.Type == "image" {
+			var img image.Image
+			var exists bool
+			if img, exists = imageCache[resEl.Content]; !exists {
+				var err error
+				img, err = gg.LoadImage(resEl.Content)
 				if err != nil {
 					dc.Pop()
 					continue
 				}
-				dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
 			}
-		} else if el.Type == "video" {
-			// 27. Suporte a renderização de elementos de vídeo frame a frame
+
+			dc.Translate(resEl.X, resEl.Y)
+			if resEl.Width > 0 && resEl.Height > 0 {
+				imgScaleX := resEl.Width / float64(img.Bounds().Dx())
+				imgScaleY := resEl.Height / float64(img.Bounds().Dy())
+				dc.Scale(imgScaleX, imgScaleY)
+			}
+			dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
+		} else if resEl.Type == "video" {
 			framePath := fmt.Sprintf("tmp/frames_%s_%d/frame_%04d.jpg", card.ID, elIdx, frameIndex+1)
 			if _, err := os.Stat(framePath); err != nil {
-				// Fallback loop/hold: se o vídeo acabou, tenta repetir o primeiro frame
 				framePath = fmt.Sprintf("tmp/frames_%s_%d/frame_0001.jpg", card.ID, elIdx)
 			}
 
 			img, err := gg.LoadImage(framePath)
 			if err != nil {
-				// Fallback visual (Placeholder) para Web Preview
+				// Fallback visual
 				dc.SetHexColor("#333333")
-				dc.DrawRectangle(el.X-el.Width/2, el.Y-el.Height/2, el.Width, el.Height)
+				dc.DrawRectangle(resEl.X-resEl.Width/2, resEl.Y-resEl.Height/2, resEl.Width, resEl.Height)
 				dc.Fill()
 				
 				dc.SetHexColor("#FFFFFF")
-				dc.DrawStringAnchored("VIDEO PLACEHOLDER", el.X, el.Y, 0.5, 0.5)
+				dc.DrawStringAnchored("VIDEO PLACEHOLDER", resEl.X, resEl.Y, 0.5, 0.5)
 				dc.Pop()
 				continue
 			}
-			dc.DrawImageAnchored(img, int(el.X), int(el.Y), 0.5, 0.5)
+
+			dc.Translate(resEl.X, resEl.Y)
+			if resEl.Width > 0 && resEl.Height > 0 {
+				imgScaleX := resEl.Width / float64(img.Bounds().Dx())
+				imgScaleY := resEl.Height / float64(img.Bounds().Dy())
+				dc.Scale(imgScaleX, imgScaleY)
+			}
+			dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
 		}
-		
+
 		dc.Pop()
 	}
 }

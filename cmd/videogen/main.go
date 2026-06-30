@@ -134,6 +134,9 @@ func run() error {
 		return fmt.Errorf("erro ao fazer parse do JSON: %w", err)
 	}
 
+	// Expande os templates de cena pré-configurados
+	engine.ExpandTemplates(&template)
+
 	absJsonPath, err := filepath.Abs(*jsonPath)
 	if err != nil {
 		return fmt.Errorf("erro ao obter caminho absoluto do JSON: %w", err)

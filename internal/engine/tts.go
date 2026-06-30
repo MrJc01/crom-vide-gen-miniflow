@@ -15,6 +15,232 @@ import (
 	"videogen/internal/models"
 )
 
+// ExpandTemplates percorre os cards e gera os elementos correspondentes aos templates selecionados
+func ExpandTemplates(tmpl *models.Template) {
+	for i := range tmpl.Cards {
+		card := &tmpl.Cards[i]
+		if card.TemplateName == "" {
+			continue
+		}
+		
+		var templateElements []models.Element
+		
+		switch card.TemplateName {
+		case "intro":
+			videoPath := card.Parameters["video"]
+			imagePath := card.Parameters["image"]
+			title := card.Parameters["title"]
+			subtitle := card.Parameters["subtitle"]
+			
+			// 1. Background video or image
+			if videoPath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "video",
+					Content: videoPath,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+			} else if imagePath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: imagePath,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+			}
+			
+			// 2. Dark overlay (a semi-transparent rect)
+			templateElements = append(templateElements, models.Element{
+				Type:   "rect",
+				Color:  "#000000cc", // 80% opacity black
+				X:      0,
+				Y:      0,
+				Width:  1920,
+				Height: 1080,
+			})
+			
+			// 3. Title text
+			if title != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   title,
+					FontSize:  72,
+					Color:     "#ffffff",
+					X:         0,
+					Y:         -100,
+					TextAlign: "center",
+				})
+			}
+			
+			// 4. Subtitle text
+			if subtitle != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   subtitle,
+					FontSize:  40,
+					Color:     "#00adb5", // nice cyan
+					X:         0,
+					Y:         100,
+					TextAlign: "center",
+				})
+			}
+			
+		case "image_text":
+			imagePath := card.Parameters["image"]
+			title := card.Parameters["title"]
+			text := card.Parameters["text"]
+			
+			// 1. Background gradient rect
+			templateElements = append(templateElements, models.Element{
+				Type:   "rect",
+				Color:  "gradient:#1a1a2e,#0f0f1b",
+				X:      0,
+				Y:      0,
+				Width:  1920,
+				Height: 1080,
+			})
+			
+			// 2. Image on the left
+			if imagePath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: imagePath,
+					X:       -400,
+					Y:       0,
+					Width:   800,
+					Height:  800,
+				})
+			}
+			
+			// 3. Title on the right
+			if title != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   title,
+					FontSize:  60,
+					Color:     "#ffffff",
+					X:         450,
+					Y:         -150,
+					TextAlign: "left",
+				})
+			}
+			
+			// 4. Paragraph text on the right
+			if text != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   text,
+					FontSize:  36,
+					Color:     "#eeeeee",
+					X:         450,
+					Y:         100,
+					TextAlign: "left",
+				})
+			}
+			
+		case "quote":
+			quote := card.Parameters["quote"]
+			author := card.Parameters["author"]
+			
+			// 1. Background gradient rect
+			templateElements = append(templateElements, models.Element{
+				Type:   "rect",
+				Color:  "gradient:#0f0f1b,#1a1a2e",
+				X:      0,
+				Y:      0,
+				Width:  1920,
+				Height: 1080,
+			})
+			
+			// 2. Quote text
+			if quote != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   fmt.Sprintf(`"%s"`, quote),
+					FontSize:  54,
+					Color:     "#eeeeee",
+					X:         0,
+					Y:         -50,
+					TextAlign: "center",
+				})
+			}
+			
+			// 3. Author text
+			if author != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   fmt.Sprintf("- %s", author),
+					FontSize:  36,
+					Color:     "#00adb5",
+					X:         0,
+					Y:         150,
+					TextAlign: "center",
+				})
+			}
+			
+		case "outro":
+			logoPath := card.Parameters["logo"]
+			title := card.Parameters["title"]
+			subtitle := card.Parameters["subtitle"]
+			
+			// 1. Background gradient rect
+			templateElements = append(templateElements, models.Element{
+				Type:   "rect",
+				Color:  "gradient:#1a1a2e,#0f0f1b",
+				X:      0,
+				Y:      0,
+				Width:  1920,
+				Height: 1080,
+			})
+			
+			// 2. Logo image
+			if logoPath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: logoPath,
+					X:       0,
+					Y:       -150,
+					Width:   350,
+					Height:  350,
+				})
+			}
+			
+			// 3. Title text
+			if title != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   title,
+					FontSize:  54,
+					Color:     "#ffffff",
+					X:         0,
+					Y:         150,
+					TextAlign: "center",
+				})
+			}
+			
+			// 4. Subtitle text
+			if subtitle != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:      "text",
+					Content:   subtitle,
+					FontSize:  36,
+					Color:     "#eeeeee",
+					X:         0,
+					Y:         250,
+					TextAlign: "center",
+				})
+			}
+		}
+		
+		// Prepend templateElements to card.Elements
+		card.Elements = append(templateElements, card.Elements...)
+	}
+}
+
 // ResolveRelativePaths converte caminhos de arquivos relativos no template em caminhos absolutos baseados no diretório do workspace
 func ResolveRelativePaths(tmpl *models.Template, workspaceDir string) {
 	if tmpl.AudioURL != "" && !filepath.IsAbs(tmpl.AudioURL) && !strings.HasPrefix(tmpl.AudioURL, "http://") && !strings.HasPrefix(tmpl.AudioURL, "https://") {
@@ -68,7 +294,7 @@ func ResolveNarrationAndDurations(ctx context.Context, tmpl *models.Template) er
 			
 			// Gera o arquivo de TTS
 			ttsPath := filepath.Join("tmp", fmt.Sprintf("tts_%s.mp3", card.ID))
-			err := GenerateGoogleTTS(card.Narration, lang, ttsPath)
+			err := GenerateCromyvoiceTTS(card.Narration, lang, ttsPath)
 			if err != nil {
 				return fmt.Errorf("erro ao gerar TTS para o card %s: %w", card.ID, err)
 			}
@@ -122,6 +348,38 @@ func hasVideoElement(card *models.Card) bool {
 		}
 	}
 	return false
+}
+
+// GenerateCromyvoiceTTS tenta usar o cromyvoice para gerar a narração, com fallback para o Google TTS.
+func GenerateCromyvoiceTTS(text, lang, outPath string) error {
+	binaryPath := "./bin/cromyvoice"
+	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+		binaryPath = "./cromyvoice"
+		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+			slog.Info("Binário cromyvoice não encontrado, usando fallback Google TTS")
+			return GenerateGoogleTTS(text, lang, outPath)
+		}
+	}
+
+	slog.Info("Gerando TTS via cromyvoice", "text", text, "path", outPath)
+	
+	args := []string{"-text", text, "-out", outPath}
+	if lang != "" && lang != "pt" {
+		if lang == "en" {
+			args = append(args, "-voice", "en-US-GuyNeural")
+		} else if lang == "es" {
+			args = append(args, "-voice", "es-ES-AlvaroNeural")
+		}
+	}
+
+	cmd := exec.Command(binaryPath, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		slog.Warn("Falha ao gerar TTS com cromyvoice, usando fallback Google TTS", "erro", err, "output", string(out))
+		return GenerateGoogleTTS(text, lang, outPath)
+	}
+
+	return nil
 }
 
 // GenerateGoogleTTS gera áudio de TTS dividindo o texto em partes de 200 caracteres

@@ -28,13 +28,15 @@ type VoiceConfig struct {
 }
 
 type Card struct {
-	ID              string       `json:"id"`
-	DurationMs      int          `json:"duration_ms"`
-	BackgroundColor string       `json:"background_color"`
-	Elements        []Element    `json:"elements"`
-	Narration       string       `json:"narration,omitempty"`
-	Voice           *VoiceConfig `json:"voice,omitempty"`
-	DurationMode    string       `json:"duration_mode,omitempty"` // "manual", "video", "narration"
+	ID              string            `json:"id"`
+	DurationMs      int               `json:"duration_ms"`
+	BackgroundColor string            `json:"background_color"`
+	Elements        []Element         `json:"elements"`
+	Narration       string            `json:"narration,omitempty"`
+	Voice           *VoiceConfig      `json:"voice,omitempty"`
+	DurationMode    string            `json:"duration_mode,omitempty"` // "manual", "video", "narration"
+	TemplateName    string            `json:"template_name,omitempty"`
+	Parameters      map[string]string `json:"parameters,omitempty"`
 }
 
 type Element struct {
