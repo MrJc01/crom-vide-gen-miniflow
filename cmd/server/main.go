@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -49,6 +50,8 @@ func main() {
 	mux.HandleFunc("/api/preview", handlePreview)
 	mux.HandleFunc("/api/render", handleRender)
 	mux.HandleFunc("/api/upload", handleUpload)
+	mux.HandleFunc("/api/media", handleMedia)
+	mux.HandleFunc("/api/probe", handleProbe)
 	
 	// API de Vídeos
 	mux.HandleFunc("/api/videos", handleVideos)
@@ -57,6 +60,10 @@ func main() {
 	// Servir arquivos estáticos dos vídeos gerados
 	os.MkdirAll("outputs", 0755)
 	mux.Handle("/outputs/", http.StripPrefix("/outputs/", http.FileServer(http.Dir("outputs"))))
+
+	// Servir a pasta de uploads estáticos para preview
+	os.MkdirAll("tmp/uploads", 0755)
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("tmp/uploads"))))
 
 	// Iniciar servidor
 	port := ":8080"
@@ -249,6 +256,7 @@ func handleRender(w http.ResponseWriter, r *http.Request) {
 		FilePath:   outPath,
 		Category:   "Uncategorized",
 		Archived:   false,
+		Template:   tmpl,
 	}
 	if err := db.AddVideoJob(job); err != nil {
 		log.Printf("Error saving video job: %v", err)
@@ -260,13 +268,15 @@ func handleRender(w http.ResponseWriter, r *http.Request) {
 		
 		renderer := engine.NewFFmpegRenderer(t.HWAccel, t.JPEGQuality) 
 		
+		start := time.Now()
 		err := engine.ProcessVideo(context.Background(), t, output, runtime.NumCPU(), renderer)
+		elapsed := time.Since(start)
 		if err != nil {
 			log.Printf("ERROR rendering video %s: %v", t.TemplateID, err)
 			db.UpdateVideoJobStatus(jID, "error", err.Error())
 		} else {
 			log.Printf("SUCCESS rendering video %s: %v", t.TemplateID, output)
-			db.UpdateVideoJobStatus(jID, "done", "")
+			db.UpdateVideoJobStatusAndDuration(jID, "done", "", elapsed.Milliseconds())
 		}
 	}(tmpl, outPath, jobID)
 
@@ -399,4 +409,110 @@ func handleVideoByID(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// GET /api/media - Escaneia a pasta tmp/uploads/ e retorna os arquivos organizados por subpastas
+func handleMedia(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	uploadsDir := "tmp/uploads"
+	_ = os.MkdirAll(uploadsDir, 0755)
+
+	// Estrutura para agrupar mídias por subpastas
+	// "/" representa a raiz de uploads, subpastas representam caminhos relativos
+	mediaTree := make(map[string][]map[string]interface{})
+
+	err := filepath.Walk(uploadsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// Calcula o caminho relativo à pasta uploadsDir
+		rel, err := filepath.Rel(uploadsDir, path)
+		if err != nil {
+			return err
+		}
+
+		dir := filepath.Dir(rel)
+		// Normaliza o diretório raiz para "/"
+		if dir == "." {
+			dir = "/"
+		}
+
+		// Determina o tipo do arquivo (video/image/audio/etc)
+		mediaType := "other"
+		ext := strings.ToLower(filepath.Ext(info.Name()))
+		if ext == ".mp4" || ext == ".mov" || ext == ".webm" || ext == ".ts" {
+			mediaType = "video"
+		} else if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" {
+			mediaType = "image"
+		} else if ext == ".mp3" || ext == ".wav" || ext == ".aac" || ext == ".m4a" {
+			mediaType = "audio"
+		}
+
+		filename := info.Name()
+		urlPath := "/uploads/" + filepath.ToSlash(rel)
+		
+		item := map[string]interface{}{
+			"name": filename,
+			"path": path,
+			"url":  "http://" + r.Host + urlPath,
+			"type": mediaType,
+			"size": info.Size(),
+		}
+
+		mediaTree[dir] = append(mediaTree[dir], item)
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, "Erro ao escanear mídias: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(mediaTree)
+}
+
+// GET /api/probe?path=...
+func handleProbe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	filePath := r.URL.Query().Get("path")
+	if filePath == "" {
+		http.Error(w, "Missing path", http.StatusBadRequest)
+		return
+	}
+
+	// Executa ffprobe
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filePath)
+	out, err := cmd.Output()
+	if err != nil {
+		// Se der erro por não ser vídeo, retorna duration_ms: 0
+		response := map[string]interface{}{"duration_ms": 0}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	durationSec, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+	if err != nil {
+		durationSec = 0
+	}
+
+	response := map[string]interface{}{
+		"duration_ms": int64(durationSec * 1000.0),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(response)
 }

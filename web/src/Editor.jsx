@@ -6,7 +6,7 @@ import Inspector from './Inspector'
 import Timeline from './Timeline'
 import PreRenderModal from './PreRenderModal'
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = `http://${window.location.hostname}:8080/api`;
 
 export default function Editor() {
   const { id } = useParams();

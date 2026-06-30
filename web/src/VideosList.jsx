@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = `http://${window.location.hostname}:8080/api`;
 
 export default function VideosList() {
   const [jobs, setJobs] = useState({});

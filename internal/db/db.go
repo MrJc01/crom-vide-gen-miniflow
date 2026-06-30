@@ -6,18 +6,21 @@ import (
 	"os"
 	"sync"
 	"time"
+	"videogen/internal/models"
 )
 
 type VideoJob struct {
-	ID         string    `json:"id"`
-	TemplateID string    `json:"template_id"`
-	Status     string    `json:"status"` // "rendering", "done", "error"
-	FilePath   string    `json:"file_path"`
-	Category   string    `json:"category"`
-	Archived   bool      `json:"archived"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-	Error      string    `json:"error,omitempty"`
+	ID               string          `json:"id"`
+	TemplateID       string          `json:"template_id"`
+	Status           string          `json:"status"` // "rendering", "done", "error"
+	FilePath         string          `json:"file_path"`
+	Category         string          `json:"category"`
+	Archived         bool            `json:"archived"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
+	Error            string          `json:"error,omitempty"`
+	RenderDurationMs int64           `json:"render_duration_ms,omitempty"`
+	Template         models.Template `json:"template,omitempty"`
 }
 
 var (
@@ -90,6 +93,28 @@ func UpdateVideoJobStatus(id, status, errorMsg string) error {
 		if errorMsg != "" {
 			job.Error = errorMsg
 		}
+		job.UpdatedAt = time.Now()
+		jobs[id] = job
+		out, _ := json.MarshalIndent(jobs, "", "  ")
+		return os.WriteFile(dbFile, out, 0644)
+	}
+	return fmt.Errorf("job not found")
+}
+
+func UpdateVideoJobStatusAndDuration(id, status, errorMsg string, durationMs int64) error {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
+	data, _ := os.ReadFile(dbFile)
+	var jobs map[string]VideoJob
+	json.Unmarshal(data, &jobs)
+
+	if job, ok := jobs[id]; ok {
+		job.Status = status
+		if errorMsg != "" {
+			job.Error = errorMsg
+		}
+		job.RenderDurationMs = durationMs
 		job.UpdatedAt = time.Now()
 		jobs[id] = job
 		out, _ := json.MarshalIndent(jobs, "", "  ")

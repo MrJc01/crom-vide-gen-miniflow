@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
-const API_BASE = 'http://localhost:8080/api';
-const HOST = 'http://localhost:8080';
+const HOST = `http://${window.location.hostname}:8080`;
+const API_BASE = `${HOST}/api`;
 
 export default function VideoDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [error, setError] = useState(null);
+  const [showJson, setShowJson] = useState(false);
 
   useEffect(() => {
     let interval;
@@ -82,9 +83,12 @@ export default function VideoDetail() {
               Seu navegador não suporta vídeos HTML5.
             </video>
             
-            <div style={{ marginTop: '2rem', width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ marginTop: '2rem', width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 <p><strong>Criado em:</strong> {new Date(job.created_at).toLocaleString()}</p>
+                {job.render_duration_ms > 0 && (
+                  <p><strong>Tempo de Renderização:</strong> {(job.render_duration_ms / 1000).toFixed(2)}s</p>
+                )}
                 <p><strong>ID do Job:</strong> {job.id}</p>
               </div>
               <div>
@@ -98,6 +102,39 @@ export default function VideoDetail() {
                 </a>
               </div>
             </div>
+
+            {job.template && (
+              <div style={{ marginTop: '1.5rem', width: '100%', maxWidth: '800px', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                <button 
+                  onClick={() => setShowJson(!showJson)}
+                  style={{
+                    background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: 0
+                  }}
+                >
+                  {showJson ? '▼ Ocultar JSON de Template Utilizado' : '▶ Exibir JSON de Template Utilizado'}
+                </button>
+                {showJson && (
+                  <div style={{ position: 'relative', marginTop: '1rem' }}>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(job.template, null, 2));
+                        alert('JSON copiado!');
+                      }}
+                      style={{
+                        position: 'absolute', top: '10px', right: '10px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer'
+                      }}
+                    >
+                      Copiar JSON
+                    </button>
+                    <pre style={{
+                      background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1rem', overflowX: 'auto', fontSize: '0.8rem', color: '#cbd5e1', maxHeight: '300px', margin: 0
+                    }}>
+                      <code>{JSON.stringify(job.template, null, 2)}</code>
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

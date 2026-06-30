@@ -1,9 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
+import MediaLibrary from './MediaLibrary';
+
+const API_HOST = `http://${window.location.hostname}:8080`;
 
 export default function PreRenderModal({ data, onClose, onRender }) {
   const [formData, setFormData] = useState(null);
   const [durationModes, setDurationModes] = useState({}); // { cardIdx: 'auto' | 'manual' }
   const [videoDurations, setVideoDurations] = useState({}); // { cardIdx: { elIdx: ms } }
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [libraryTarget, setLibraryTarget] = useState(null); // { isGlobalAudio: boolean, cardIdx?: number, elIdx?: number }
+
+  const handleLibrarySelect = async (path) => {
+    if (libraryTarget.isGlobalAudio) {
+      handleGlobalAudioChange(path);
+    } else {
+      const { cardIdx, elIdx } = libraryTarget;
+      handleMediaChange(cardIdx, elIdx, path);
+      
+      // Busca a duração do vídeo usando o endpoint probe
+      try {
+        const res = await fetch(`${API_HOST}/api/probe?path=${encodeURIComponent(path)}`);
+        const result = await res.json();
+        if (res.ok && result.duration_ms && result.duration_ms > 0) {
+          setVideoDurations(prev => {
+            const prevCard = prev[cardIdx] || {};
+            return {
+              ...prev,
+              [cardIdx]: { ...prevCard, [elIdx]: result.duration_ms }
+            };
+          });
+        }
+      } catch (err) {
+        console.error('Erro ao probe-ar vídeo:', err);
+      }
+    }
+    setIsLibraryOpen(false);
+  };
 
   useEffect(() => {
     if (data) {
@@ -74,7 +106,7 @@ export default function PreRenderModal({ data, onClose, onRender }) {
     uploadData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:8080/api/upload', {
+      const res = await fetch(`${API_HOST}/api/upload`, {
         method: 'POST',
         body: uploadData
       });
@@ -133,10 +165,14 @@ export default function PreRenderModal({ data, onClose, onRender }) {
               <div style={{ flex: 1, padding: '0.5rem', color: '#38bdf8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', alignSelf: 'center', fontSize: '0.9rem' }} title={formData.audio_url}>
                 {formData.audio_url ? `🎵 ${formData.audio_url.split('/').pop()}` : ''}
               </div>
-              <label className="btn" style={{ cursor: 'pointer', background: '#334155', color: '#fff', textAlign: 'center', width: 'auto', display: 'flex', alignItems: 'center' }}>
-                📁 Escolher Arquivo
-                <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, true, null, null)} />
-              </label>
+              <button 
+                type="button"
+                className="btn" 
+                onClick={() => { setLibraryTarget({ isGlobalAudio: true }); setIsLibraryOpen(true); }}
+                style={{ background: '#334155', color: '#fff', width: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+              >
+                🔍 Selecionar Áudio
+              </button>
             </div>
           </div>
 
@@ -241,10 +277,14 @@ export default function PreRenderModal({ data, onClose, onRender }) {
                           )}
                           
                           {isMedia && (
-                            <label className="btn" style={{ cursor: 'pointer', background: '#334155', color: '#fff', textAlign: 'center', width: 'auto', display: 'flex', alignItems: 'center' }}>
-                              📁 Arquivo
-                              <input type="file" accept={item.el.type === 'video' ? "video/*" : "image/*"} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, false, cardIdx, item.elIdx)} />
-                            </label>
+                            <button 
+                              type="button"
+                              className="btn" 
+                              onClick={() => { setLibraryTarget({ isGlobalAudio: false, cardIdx, elIdx: item.elIdx }); setIsLibraryOpen(true); }}
+                              style={{ background: '#334155', color: '#fff', width: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            >
+                              🔍 Selecionar Mídia
+                            </button>
                           )}
                         </div>
                       </div>
@@ -267,9 +307,45 @@ export default function PreRenderModal({ data, onClose, onRender }) {
           </div>
         </form>
       </div>
+
+      {isLibraryOpen && (
+        <div style={libraryModalOverlayStyle}>
+          <div style={libraryModalContentStyle}>
+            <MediaLibrary 
+              isPicker={true} 
+              onSelect={handleLibrarySelect} 
+              onClose={() => setIsLibraryOpen(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const libraryModalOverlayStyle = {
+  position: 'fixed',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(5px)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 1100
+};
+
+const libraryModalContentStyle = {
+  backgroundColor: 'var(--bg-panel)',
+  width: '90%',
+  maxWidth: '900px',
+  height: '85vh',
+  borderRadius: '12px',
+  border: '1px solid var(--border)',
+  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden'
+};
 
 // Inline styles to avoid bloating index.css for this specific modal
 const overlayStyle = {

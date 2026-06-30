@@ -6,6 +6,7 @@ import VideosList from './VideosList';
 import VideoDetail from './VideoDetail';
 import Docs from './Docs';
 import About from './About';
+import MediaLibrary from './MediaLibrary';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/videos/:id" element={<VideoDetail />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/about" element={<About />} />
+          <Route path="/medias" element={<MediaLibrary />} />
         </Routes>
       </Layout>
     </BrowserRouter>

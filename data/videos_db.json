@@ -7,7 +7,17 @@
     "category": "Uncategorized",
     "archived": false,
     "created_at": "2026-06-29T18:30:11.234344517-03:00",
-    "updated_at": "2026-06-29T18:38:27.29347422-03:00"
+    "updated_at": "2026-06-29T18:38:27.29347422-03:00",
+    "template": {
+      "template_id": "",
+      "resolution": {
+        "width": 0,
+        "height": 0
+      },
+      "fps": 0,
+      "cards": null,
+      "hwaccel": false
+    }
   },
   "job_1782769779837": {
     "id": "job_1782769779837",
@@ -17,7 +27,17 @@
     "category": "Uncategorized",
     "archived": false,
     "created_at": "2026-06-29T18:49:39.837065977-03:00",
-    "updated_at": "2026-06-29T18:54:48.33014561-03:00"
+    "updated_at": "2026-06-29T18:54:48.33014561-03:00",
+    "template": {
+      "template_id": "",
+      "resolution": {
+        "width": 0,
+        "height": 0
+      },
+      "fps": 0,
+      "cards": null,
+      "hwaccel": false
+    }
   },
   "job_1782770088459": {
     "id": "job_1782770088459",
@@ -27,6 +47,16 @@
     "category": "Uncategorized",
     "archived": false,
     "created_at": "2026-06-29T18:54:48.459557907-03:00",
-    "updated_at": "2026-06-29T18:56:36.145145982-03:00"
+    "updated_at": "2026-06-29T18:56:36.145145982-03:00",
+    "template": {
+      "template_id": "",
+      "resolution": {
+        "width": 0,
+        "height": 0
+      },
+      "fps": 0,
+      "cards": null,
+      "hwaccel": false
+    }
   }
 }

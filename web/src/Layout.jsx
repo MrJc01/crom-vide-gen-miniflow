@@ -10,6 +10,7 @@ export default function Layout({ children }) {
         <nav style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <Link to="/" className="nav-link" style={linkStyle}>🏠 Início</Link>
           <Link to="/videos" className="nav-link" style={linkStyle}>🎥 Meus Vídeos</Link>
+          <Link to="/medias" className="nav-link" style={linkStyle}>📂 Mídias</Link>
           <Link to="/docs" className="nav-link" style={linkStyle}>📚 Documentação</Link>
           <Link to="/about" className="nav-link" style={linkStyle}>ℹ️ Sobre</Link>
         </nav>
