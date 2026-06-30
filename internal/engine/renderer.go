@@ -157,6 +157,8 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 		"-b:v", bitrate,
 		"-vf", vfFilter,
 		"-c:a", "aac",
+		"-ar", "44100",
+		"-ac", "2",
 		"-shortest",
 		"-preset", "veryfast",
 		"-pix_fmt", "yuv420p",
@@ -267,6 +269,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	if hasTTS || videoAudio != "" {
 		tempMp4 := outPath + ".temp.mp4"
 		var mergeCmd *exec.Cmd
+		durSec := fmt.Sprintf("%.3f", float64(card.DurationMs)/1000.0)
 		
 		if hasTTS && videoAudio != "" {
 			// #nosec G204
@@ -277,9 +280,11 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 				"-filter_complex", "[1:a][2:a]amix=inputs=2:duration=first[a]",
 				"-c:v", "copy",
 				"-c:a", "aac",
+				"-ar", "44100",
+				"-ac", "2",
 				"-map", "0:v:0",
 				"-map", "[a]",
-				"-shortest",
+				"-t", durSec,
 				tempMp4,
 			)
 		} else if hasTTS {
@@ -289,9 +294,11 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 				"-i", ttsFile,
 				"-c:v", "copy",
 				"-c:a", "aac",
+				"-ar", "44100",
+				"-ac", "2",
 				"-map", "0:v:0",
 				"-map", "1:a:0",
-				"-shortest",
+				"-t", durSec,
 				tempMp4,
 			)
 		} else {
@@ -301,9 +308,11 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 				"-i", videoAudio,
 				"-c:v", "copy",
 				"-c:a", "aac",
+				"-ar", "44100",
+				"-ac", "2",
 				"-map", "0:v:0",
 				"-map", "1:a:0",
-				"-shortest",
+				"-t", durSec,
 				tempMp4,
 			)
 		}

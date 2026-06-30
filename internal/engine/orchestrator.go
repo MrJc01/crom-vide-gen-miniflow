@@ -15,8 +15,9 @@ import (
 )
 
 type RenderResult struct {
-	Path string
-	Err  error
+	CardID string
+	Path   string
+	Err    error
 }
 
 // Worker Pool Pattern
@@ -39,12 +40,12 @@ func renderWorker(ctx context.Context, id int, jobs <-chan models.Card, results 
 
 		if err != nil {
 			slog.Error("Erro ao renderizar card", "card", card.ID, "erro", err, "duracao_ms", elapsed.Milliseconds())
-			results <- RenderResult{Path: "", Err: fmt.Errorf("card %s failed: %v", card.ID, err)}
+			results <- RenderResult{CardID: card.ID, Path: "", Err: fmt.Errorf("card %s failed: %v", card.ID, err)}
 			continue
 		}
 		
 		slog.Info("Card renderizado com sucesso", "card", card.ID, "duracao_ms", elapsed.Milliseconds())
-		results <- RenderResult{Path: outPath, Err: nil}
+		results <- RenderResult{CardID: card.ID, Path: outPath, Err: nil}
 	}
 }
 
@@ -82,13 +83,13 @@ func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string,
 	wg.Wait()
 	close(results)
 
-	var tmpFiles []string
+	renderedPaths := make(map[string]string)
 	var errs []string
 	for res := range results {
 		if res.Err != nil {
 			errs = append(errs, res.Err.Error())
 		} else if res.Path != "" {
-			tmpFiles = append(tmpFiles, res.Path)
+			renderedPaths[res.CardID] = res.Path
 		}
 	}
 
@@ -96,8 +97,14 @@ func ProcessVideo(ctx context.Context, tmpl models.Template, finalOutput string,
 		return fmt.Errorf("falha na renderização: %s", strings.Join(errs, "; "))
 	}
 
-	if len(tmpFiles) != len(tmpl.Cards) {
-		return fmt.Errorf("falha ao renderizar todos os cards")
+	// Rebuild the tmpFiles slice in the exact chronological order of the template cards
+	var tmpFiles []string
+	for _, card := range tmpl.Cards {
+		path, exists := renderedPaths[card.ID]
+		if !exists {
+			return fmt.Errorf("caminho de renderização para o card %s não encontrado", card.ID)
+		}
+		tmpFiles = append(tmpFiles, path)
 	}
 
 	var audioPath string

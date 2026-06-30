@@ -33,6 +33,7 @@ func ExpandTemplates(tmpl *models.Template) {
 			subtitle := card.Parameters["subtitle"]
 			
 			// 1. Background video or image
+			hasBackground := false
 			if videoPath != "" {
 				templateElements = append(templateElements, models.Element{
 					Type:    "video",
@@ -42,6 +43,7 @@ func ExpandTemplates(tmpl *models.Template) {
 					Width:   1920,
 					Height:  1080,
 				})
+				hasBackground = true
 			} else if imagePath != "" {
 				templateElements = append(templateElements, models.Element{
 					Type:    "image",
@@ -51,42 +53,53 @@ func ExpandTemplates(tmpl *models.Template) {
 					Width:   1920,
 					Height:  1080,
 				})
+				hasBackground = true
 			}
 			
-			// 2. Dark overlay (a semi-transparent rect)
-			templateElements = append(templateElements, models.Element{
-				Type:   "rect",
-				Color:  "#000000cc", // 80% opacity black
-				X:      0,
-				Y:      0,
-				Width:  1920,
-				Height: 1080,
-			})
-			
-			// 3. Title text
-			if title != "" {
+			// As requested, if there is a background media, do NOT place anything in front of it.
+			// Only draw overlays and text if there is no background media.
+			if !hasBackground {
+				// 2. Dark background gradient
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   title,
-					FontSize:  72,
-					Color:     "#ffffff",
-					X:         0,
-					Y:         -100,
-					TextAlign: "center",
+					Type:   "rect",
+					Color:  "gradient:#0b0b0f,#1a1a2e",
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
 				})
-			}
-			
-			// 4. Subtitle text
-			if subtitle != "" {
-				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   subtitle,
-					FontSize:  40,
-					Color:     "#00adb5", // nice cyan
-					X:         0,
-					Y:         100,
-					TextAlign: "center",
-				})
+				
+				// 3. Title text with shadows
+				if title != "" {
+					templateElements = append(templateElements, models.Element{
+						Type:          "text",
+						Content:       title,
+						FontSize:      72,
+						Color:         "#ffffff",
+						X:             0,
+						Y:             -100,
+						TextAlign:     "center",
+						ShadowColor:   "#000000aa",
+						ShadowOffsetX: 3,
+						ShadowOffsetY: 3,
+					})
+				}
+				
+				// 4. Subtitle text with shadows
+				if subtitle != "" {
+					templateElements = append(templateElements, models.Element{
+						Type:          "text",
+						Content:       subtitle,
+						FontSize:      40,
+						Color:         "#00e5ff", // premium neon cyan
+						X:             0,
+						Y:             100,
+						TextAlign:     "center",
+						ShadowColor:   "#000000aa",
+						ShadowOffsetX: 2,
+						ShadowOffsetY: 2,
+					})
+				}
 			}
 			
 		case "image_text":
@@ -94,51 +107,88 @@ func ExpandTemplates(tmpl *models.Template) {
 			title := card.Parameters["title"]
 			text := card.Parameters["text"]
 			
-			// 1. Background gradient rect
+			// 1. Background gradient rect (space tech deep blue to purple/black)
 			templateElements = append(templateElements, models.Element{
 				Type:   "rect",
-				Color:  "gradient:#1a1a2e,#0f0f1b",
+				Color:  "gradient:#0d0d1a,#180a2b",
 				X:      0,
 				Y:      0,
 				Width:  1920,
 				Height: 1080,
 			})
 			
-			// 2. Image on the left
 			if imagePath != "" {
+				// 2. Translucent glassmorphic card behind the image
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#ffffff0d", // 5% opacity white
+					X:      -450,
+					Y:      0,
+					Width:  640,
+					Height: 640,
+				})
+				
+				// 3. Thin frame border for the card
+				templateElements = append(templateElements, models.Element{
+					Type:        "frame",
+					Color:       "#ffffff1a", // 10% opacity white
+					X:           -450,
+					Y:           0,
+					Width:       640,
+					Height:      640,
+					StrokeWidth: 2,
+				})
+				
+				// 4. Actual Image centered inside the card
 				templateElements = append(templateElements, models.Element{
 					Type:    "image",
 					Content: imagePath,
-					X:       -400,
+					X:       -450,
 					Y:       0,
-					Width:   800,
-					Height:  800,
+					Width:   600,
+					Height:  600,
 				})
 			}
 			
-			// 3. Title on the right
+			// 5. Title on the right (cyan neon with shadow)
 			if title != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   title,
-					FontSize:  60,
-					Color:     "#ffffff",
-					X:         150,
-					Y:         -150,
-					TextAlign: "left",
+					Type:          "text",
+					Content:       title,
+					FontSize:      56,
+					Color:         "#00e5ff",
+					X:             180,
+					Y:             -160,
+					TextAlign:     "left",
+					ShadowColor:   "#000000aa",
+					ShadowOffsetX: 3,
+					ShadowOffsetY: 3,
+				})
+				
+				// 6. Horizontal decorative line starting aligned with the title
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#00e5ff",
+					X:      240, // 180 + (120/2) to align left edge at X=180
+					Y:      -90,
+					Width:  120,
+					Height: 4,
 				})
 			}
 			
-			// 4. Paragraph text on the right
+			// 7. Paragraph text on the right (soft ice blue with shadow)
 			if text != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   text,
-					FontSize:  36,
-					Color:     "#eeeeee",
-					X:         150,
-					Y:         100,
-					TextAlign: "left",
+					Type:          "text",
+					Content:       text,
+					FontSize:      32,
+					Color:         "#e0e0ff",
+					X:             180,
+					Y:             40,
+					TextAlign:     "left",
+					ShadowColor:   "#000000aa",
+					ShadowOffsetX: 2,
+					ShadowOffsetY: 2,
 				})
 			}
 			
@@ -146,39 +196,86 @@ func ExpandTemplates(tmpl *models.Template) {
 			quote := card.Parameters["quote"]
 			author := card.Parameters["author"]
 			
-			// 1. Background gradient rect
+			// 1. Background gradient rect (cinematic dark purple to deep blue)
 			templateElements = append(templateElements, models.Element{
 				Type:   "rect",
-				Color:  "gradient:#0f0f1b,#1a1a2e",
+				Color:  "gradient:#120c24,#080f1e",
 				X:      0,
 				Y:      0,
 				Width:  1920,
 				Height: 1080,
 			})
 			
-			// 2. Quote text
+			// 2. Huge, ultra-subtle background quotation marks
+			templateElements = append(templateElements, models.Element{
+				Type:      "text",
+				Content:   "“",
+				FontSize:  240,
+				Color:     "#ffffff08", // 3% opacity
+				X:         -600,
+				Y:         -200,
+				TextAlign: "center",
+			})
+			templateElements = append(templateElements, models.Element{
+				Type:      "text",
+				Content:   "”",
+				FontSize:  240,
+				Color:     "#ffffff08", // 3% opacity
+				X:         600,
+				Y:         200,
+				TextAlign: "center",
+			})
+			
+			// 3. Glowing thin outline frame around the quote card
+			templateElements = append(templateElements, models.Element{
+				Type:        "frame",
+				Color:       "#00e5ff1a", // 10% opacity cyan
+				X:           0,
+				Y:           0,
+				Width:       1500,
+				Height:      600,
+				StrokeWidth: 2,
+			})
+			
+			// 4. Quote text with strong drop-shadow
 			if quote != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   fmt.Sprintf(`"%s"`, quote),
-					FontSize:  54,
-					Color:     "#eeeeee",
-					X:         0,
-					Y:         -50,
-					TextAlign: "center",
+					Type:          "text",
+					Content:       fmt.Sprintf("“%s”", quote),
+					FontSize:      44,
+					Color:         "#ffffff",
+					X:             0,
+					Y:             -50,
+					TextAlign:     "center",
+					ShadowColor:   "#000000cc",
+					ShadowOffsetX: 3,
+					ShadowOffsetY: 3,
 				})
 			}
 			
-			// 3. Author text
+			// 5. Delicate divider line
+			templateElements = append(templateElements, models.Element{
+				Type:   "rect",
+				Color:  "#00e5ff",
+				X:      0,
+				Y:      60,
+				Width:  80,
+				Height: 3,
+			})
+			
+			// 6. Author text (cyan with shadow)
 			if author != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   fmt.Sprintf("- %s", author),
-					FontSize:  36,
-					Color:     "#00adb5",
-					X:         0,
-					Y:         150,
-					TextAlign: "center",
+					Type:          "text",
+					Content:       author,
+					FontSize:      32,
+					Color:         "#00e5ff",
+					X:             0,
+					Y:             130,
+					TextAlign:     "center",
+					ShadowColor:   "#000000cc",
+					ShadowOffsetX: 2,
+					ShadowOffsetY: 2,
 				})
 			}
 			
@@ -190,48 +287,84 @@ func ExpandTemplates(tmpl *models.Template) {
 			// 1. Background gradient rect
 			templateElements = append(templateElements, models.Element{
 				Type:   "rect",
-				Color:  "gradient:#1a1a2e,#0f0f1b",
+				Color:  "gradient:#080f1e,#120c24",
 				X:      0,
 				Y:      0,
 				Width:  1920,
 				Height: 1080,
 			})
 			
-			// 2. Logo image
+			// 2. Logo backing card (glassmorphism)
 			if logoPath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#ffffff0d", // 5% opacity
+					X:      0,
+					Y:      -160,
+					Width:  320,
+					Height: 320,
+				})
+				
+				templateElements = append(templateElements, models.Element{
+					Type:        "frame",
+					Color:       "#ffffff1a", // 10% opacity
+					X:           0,
+					Y:           -160,
+					Width:       320,
+					Height:      320,
+					StrokeWidth: 2,
+				})
+				
+				// Actual Logo Image
 				templateElements = append(templateElements, models.Element{
 					Type:    "image",
 					Content: logoPath,
 					X:       0,
-					Y:       -150,
-					Width:   350,
-					Height:  350,
+					Y:       -160,
+					Width:   260,
+					Height:  260,
 				})
 			}
 			
-			// 3. Title text
+			// 3. Title text with shadows
 			if title != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   title,
-					FontSize:  54,
-					Color:     "#ffffff",
-					X:         0,
-					Y:         150,
-					TextAlign: "center",
+					Type:          "text",
+					Content:       title,
+					FontSize:      52,
+					Color:         "#ffffff",
+					X:             0,
+					Y:             120,
+					TextAlign:     "center",
+					ShadowColor:   "#000000cc",
+					ShadowOffsetX: 3,
+					ShadowOffsetY: 3,
+				})
+				
+				// 4. Horizontal decorative line
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#00e5ff",
+					X:      0,
+					Y:      180,
+					Width:  150,
+					Height: 3,
 				})
 			}
 			
-			// 4. Subtitle text
+			// 5. Subtitle text with shadows
 			if subtitle != "" {
 				templateElements = append(templateElements, models.Element{
-					Type:      "text",
-					Content:   subtitle,
-					FontSize:  36,
-					Color:     "#eeeeee",
-					X:         0,
-					Y:         250,
-					TextAlign: "center",
+					Type:          "text",
+					Content:       subtitle,
+					FontSize:      32,
+					Color:         "#00e5ff",
+					X:             0,
+					Y:             240,
+					TextAlign:     "center",
+					ShadowColor:   "#000000cc",
+					ShadowOffsetX: 2,
+					ShadowOffsetY: 2,
 				})
 			}
 		}
@@ -264,10 +397,26 @@ func ResolveNarrationAndDurations(ctx context.Context, tmpl *models.Template) er
 	for i := range tmpl.Cards {
 		card := &tmpl.Cards[i]
 		
-		// Determina o modo de duração padrão se não estiver definido
+		// 1. Se houver narração, SEMPRE gera o TTS (independente do modo de cálculo da duração)
+		if card.Narration != "" {
+			lang := "pt"
+			if card.Voice != nil && card.Voice.Lang != "" {
+				lang = card.Voice.Lang
+			}
+			
+			ttsPath := filepath.Join("tmp", fmt.Sprintf("tts_%s.mp3", card.ID))
+			err := GenerateCromyvoiceTTS(card.Narration, lang, ttsPath)
+			if err != nil {
+				return fmt.Errorf("erro ao gerar TTS para o card %s: %w", card.ID, err)
+			}
+		}
+		
+		// 2. Determina o modo de duração padrão se não estiver definido
 		mode := card.DurationMode
 		if mode == "" {
-			if card.Narration != "" {
+			if card.DurationMs > 0 {
+				mode = "manual"
+			} else if card.Narration != "" {
 				mode = "narration"
 			} else if hasVideoElement(card) {
 				mode = "video"
@@ -278,26 +427,7 @@ func ResolveNarrationAndDurations(ctx context.Context, tmpl *models.Template) er
 		
 		switch mode {
 		case "narration":
-			if card.Narration == "" {
-				slog.Warn("Card configurado para modo 'narration' mas não possui texto de narração", "card", card.ID)
-				if card.DurationMs <= 0 {
-					card.DurationMs = 5000 // Fallback
-				}
-				continue
-			}
-			
-			// Determina o idioma do TTS
-			lang := "pt"
-			if card.Voice != nil && card.Voice.Lang != "" {
-				lang = card.Voice.Lang
-			}
-			
-			// Gera o arquivo de TTS
 			ttsPath := filepath.Join("tmp", fmt.Sprintf("tts_%s.mp3", card.ID))
-			err := GenerateCromyvoiceTTS(card.Narration, lang, ttsPath)
-			if err != nil {
-				return fmt.Errorf("erro ao gerar TTS para o card %s: %w", card.ID, err)
-			}
 			
 			// Mede a duração do TTS com ffprobe
 			dur, err := GetAudioDuration(ttsPath)
