@@ -123,7 +123,7 @@ func ExpandTemplates(tmpl *models.Template) {
 					Content:   title,
 					FontSize:  60,
 					Color:     "#ffffff",
-					X:         450,
+					X:         150,
 					Y:         -150,
 					TextAlign: "left",
 				})
@@ -136,7 +136,7 @@ func ExpandTemplates(tmpl *models.Template) {
 					Content:   text,
 					FontSize:  36,
 					Color:     "#eeeeee",
-					X:         450,
+					X:         150,
 					Y:         100,
 					TextAlign: "left",
 				})
