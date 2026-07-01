@@ -29,6 +29,10 @@ func ExpandTemplates(tmpl *models.Template) {
 		case "intro":
 			videoPath := card.Parameters["video"]
 			imagePath := card.Parameters["image"]
+			logoPath := card.Parameters["logo"]
+			if logoPath == "" {
+				logoPath = card.Parameters["image_overlay"]
+			}
 			title := card.Parameters["title"]
 			subtitle := card.Parameters["subtitle"]
 			
@@ -56,9 +60,17 @@ func ExpandTemplates(tmpl *models.Template) {
 				hasBackground = true
 			}
 			
-			// As requested, if there is a background media, do NOT place anything in front of it.
-			// Only draw overlays and text if there is no background media.
-			if !hasBackground {
+			if hasBackground {
+				// Translucent dark layer overlay for contrast
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#0000004d", // 30% opacity black
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
+				})
+			} else {
 				// 2. Dark background gradient
 				templateElements = append(templateElements, models.Element{
 					Type:   "rect",
@@ -68,54 +80,104 @@ func ExpandTemplates(tmpl *models.Template) {
 					Width:  1920,
 					Height: 1080,
 				})
-				
-				// 3. Title text with shadows
-				if title != "" {
-					templateElements = append(templateElements, models.Element{
-						Type:          "text",
-						Content:       title,
-						FontSize:      72,
-						Color:         "#ffffff",
-						X:             0,
-						Y:             -100,
-						TextAlign:     "center",
-						ShadowColor:   "#000000aa",
-						ShadowOffsetX: 3,
-						ShadowOffsetY: 3,
-					})
-				}
-				
-				// 4. Subtitle text with shadows
-				if subtitle != "" {
-					templateElements = append(templateElements, models.Element{
-						Type:          "text",
-						Content:       subtitle,
-						FontSize:      40,
-						Color:         "#00e5ff", // premium neon cyan
-						X:             0,
-						Y:             100,
-						TextAlign:     "center",
-						ShadowColor:   "#000000aa",
-						ShadowOffsetX: 2,
-						ShadowOffsetY: 2,
-					})
-				}
+			}
+
+			// Foreground logo or overlay image
+			if logoPath != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: logoPath,
+					X:       0,
+					Y:       -220,
+					Width:   220,
+					Height:  220,
+				})
+			}
+			
+			// 3. Title text with shadows
+			if title != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:          "text",
+					Content:       title,
+					FontSize:      72,
+					Color:         "#ffffff",
+					X:             0,
+					Y:             -50,
+					TextAlign:     "center",
+					ShadowColor:   "#000000aa",
+					ShadowOffsetX: 3,
+					ShadowOffsetY: 3,
+				})
+			}
+			
+			// 4. Subtitle text with shadows
+			if subtitle != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:          "text",
+					Content:       subtitle,
+					FontSize:      40,
+					Color:         "#00e5ff", // premium neon cyan
+					X:             0,
+					Y:             110,
+					TextAlign:     "center",
+					ShadowColor:   "#000000aa",
+					ShadowOffsetX: 2,
+					ShadowOffsetY: 2,
+				})
 			}
 			
 		case "image_text":
+			videoBg := card.Parameters["video"]
+			imageBg := card.Parameters["image_background"]
 			imagePath := card.Parameters["image"]
 			title := card.Parameters["title"]
 			text := card.Parameters["text"]
 			
-			// 1. Background gradient rect (space tech deep blue to purple/black)
-			templateElements = append(templateElements, models.Element{
-				Type:   "rect",
-				Color:  "gradient:#0d0d1a,#180a2b",
-				X:      0,
-				Y:      0,
-				Width:  1920,
-				Height: 1080,
-			})
+			// 1. Background video or image
+			hasBg := false
+			if videoBg != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "video",
+					Content: videoBg,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+				hasBg = true
+			} else if imageBg != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: imageBg,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+				hasBg = true
+			}
+
+			if hasBg {
+				// Semi-translucent dark overlay for readability
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#00000066", // 40% opacity black
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
+				})
+			} else {
+				// Default gradient background
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "gradient:#0d0d1a,#180a2b",
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
+				})
+			}
 			
 			if imagePath != "" {
 				// 2. Translucent glassmorphic card behind the image
@@ -193,18 +255,56 @@ func ExpandTemplates(tmpl *models.Template) {
 			}
 			
 		case "quote":
+			videoBg := card.Parameters["video"]
+			imageBg := card.Parameters["image_background"]
 			quote := card.Parameters["quote"]
 			author := card.Parameters["author"]
 			
-			// 1. Background gradient rect (cinematic dark purple to deep blue)
-			templateElements = append(templateElements, models.Element{
-				Type:   "rect",
-				Color:  "gradient:#120c24,#080f1e",
-				X:      0,
-				Y:      0,
-				Width:  1920,
-				Height: 1080,
-			})
+			// 1. Background video or image
+			hasBg := false
+			if videoBg != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "video",
+					Content: videoBg,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+				hasBg = true
+			} else if imageBg != "" {
+				templateElements = append(templateElements, models.Element{
+					Type:    "image",
+					Content: imageBg,
+					X:       0,
+					Y:       0,
+					Width:   1920,
+					Height:  1080,
+				})
+				hasBg = true
+			}
+
+			if hasBg {
+				// Semi-translucent dark overlay for readability
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "#00000080", // 50% opacity black
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
+				})
+			} else {
+				// Cinematic dark background gradient
+				templateElements = append(templateElements, models.Element{
+					Type:   "rect",
+					Color:  "gradient:#120c24,#080f1e",
+					X:      0,
+					Y:      0,
+					Width:  1920,
+					Height: 1080,
+				})
+			}
 			
 			// 2. Huge, ultra-subtle background quotation marks
 			templateElements = append(templateElements, models.Element{

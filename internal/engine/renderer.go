@@ -386,15 +386,20 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 					if resEl.Type == "rect" && resEl.Width == 1920 && resEl.Height == 1080 {
 						resEl.Width = float64(res.Width)
 						resEl.Height = float64(res.Height)
+					} else if resEl.Type == "image" { // Logo / Foreground image overlay
+						resEl.X = 0
+						resEl.Y = -float64(res.Height) * 0.26
+						resEl.Width = float64(res.Width) * 0.35
+						resEl.Height = float64(res.Width) * 0.35
 					} else if resEl.Type == "text" {
 						resEl.X = 0
 						resEl.TextAlign = "center"
-						if resEl.FontSize == 72 { // Title
-							resEl.Y = -float64(res.Height) * 0.15
-							resEl.FontSize = 56
-						} else if resEl.FontSize == 40 { // Subtitle
-							resEl.Y = float64(res.Height) * 0.10
-							resEl.FontSize = 32
+						if resEl.FontSize >= 60 { // Title
+							resEl.Y = -float64(res.Height) * 0.05
+							resEl.FontSize = 48
+						} else if resEl.FontSize <= 45 { // Subtitle
+							resEl.Y = float64(res.Height) * 0.12
+							resEl.FontSize = 28
 						}
 					}
 				case "quote":
@@ -404,12 +409,12 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 					} else if resEl.Type == "text" {
 						resEl.X = 0
 						resEl.TextAlign = "center"
-						if strings.HasPrefix(resEl.Content, "\"") || resEl.FontSize == 54 { // Quote
+						if resEl.FontSize >= 40 { // Quote
 							resEl.Y = -float64(res.Height) * 0.08
-							resEl.FontSize = 42
+							resEl.FontSize = 36
 						} else { // Author
 							resEl.Y = float64(res.Height) * 0.15
-							resEl.FontSize = 28
+							resEl.FontSize = 24
 						}
 					}
 				case "outro":
@@ -424,10 +429,10 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 					} else if resEl.Type == "text" {
 						resEl.X = 0
 						resEl.TextAlign = "center"
-						if resEl.FontSize == 54 { // Title
+						if resEl.FontSize >= 50 { // Title
 							resEl.Y = float64(res.Height) * 0.12
 							resEl.FontSize = 42
-						} else if resEl.FontSize == 36 { // Subtitle
+						} else if resEl.FontSize <= 38 { // Subtitle
 							resEl.Y = float64(res.Height) * 0.22
 							resEl.FontSize = 28
 						}
@@ -444,12 +449,12 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 					} else if resEl.Type == "text" {
 						resEl.X = 0
 						resEl.TextAlign = "center"
-						if resEl.FontSize == 60 { // Title
+						if resEl.FontSize >= 50 { // Title (56 or 60)
 							resEl.Y = float64(res.Height) * 0.15
-							resEl.FontSize = 44
-						} else if resEl.FontSize == 36 { // Paragraph text
+							resEl.FontSize = 42
+						} else if resEl.FontSize <= 38 { // Paragraph text (32 or 36)
 							resEl.Y = float64(res.Height) * 0.28
-							resEl.FontSize = 26
+							resEl.FontSize = 24
 						}
 					}
 				}
