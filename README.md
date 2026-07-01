@@ -14,6 +14,9 @@ Motor de geração programática de vídeos baseado em templates JSON, com rende
 - **Galeria de Mídias** — Navegação por pastas, upload, preview e seleção integrada ao editor.
 - **Aceleração GPU** — Suporte a NVENC (NVIDIA) com fallback automático para CPU.
 - **Otimização de I/O** — Cache de fontes e imagens em memória + controle de qualidade JPEG.
+- **Legendas de Narração Automáticas** — Legendas desenhadas no rodapé com contorno preto de alto contraste e suporte a chaveamento (liga/desliga).
+- **Busca de Ativos Inteligente (Anti-Hallucinação)**: Varredura recursiva em subpastas de `inputs/` para resolver caminhos incorretos gerados por LLMs.
+- **Ajustes de Áudio Dinâmicos**: Ajuste dinâmico de duração de cena com base no áudio TTS + folga de 2s e filtro de atraso de 1s (adelay).
 - **Trilha sonora global** — Áudio MP3 mixado automaticamente no vídeo final.
 - **Gradientes** — Suporte a gradientes lineares em retângulos e formas.
 - **Schema textual** — Impressão formatada do template via CLI ou API para documentação.
@@ -53,7 +56,7 @@ npm run dev -- --host
 ### 3. Renderizar via CLI (sem interface web)
 
 ```bash
-go run cmd/videogen/main.go -json=templates/examples/breaking_news.json -out=video.mp4
+go run cmd/videogen/main.go -json=templates/examples/breaking_news.json -out=video.mp4 -subtitles=false
 ```
 
 ### 4. Visualizar o esquema de um template
