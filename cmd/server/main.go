@@ -212,7 +212,7 @@ func handlePreview(w http.ResponseWriter, r *http.Request) {
 	dc := gg.NewContext(res.Width, res.Height)
 	
 	// Utilizar nossa engine atualizada!
-	engine.DrawCardState(dc, card, res, 0, nil, nil)
+	engine.DrawCardState(dc, card, res, 0, nil, nil, true)
 
 	// Codificar imagem final para PNG
 	var buf bytes.Buffer
@@ -266,7 +266,11 @@ func handleRender(w http.ResponseWriter, r *http.Request) {
 	go func(t models.Template, output string, jID string) {
 		log.Printf("Starting background render for template %s to %s", t.TemplateID, output)
 		
-		renderer := engine.NewFFmpegRenderer(t.HWAccel, t.JPEGQuality) 
+		showSub := true
+		if t.Subtitles != nil {
+			showSub = *t.Subtitles
+		}
+		renderer := engine.NewFFmpegRenderer(t.HWAccel, t.JPEGQuality, showSub) 
 		
 		start := time.Now()
 		err := engine.ProcessVideo(context.Background(), t, output, runtime.NumCPU(), renderer)

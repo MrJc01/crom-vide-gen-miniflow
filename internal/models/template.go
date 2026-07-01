@@ -15,6 +15,7 @@ type Template struct {
 	AudioURL    string `json:"audio_url,omitempty"`
 	HWAccel     bool   `json:"hwaccel"`
 	JPEGQuality int    `json:"jpeg_quality,omitempty"`
+	Subtitles   *bool  `json:"subtitles,omitempty"`
 }
 
 type Size struct {

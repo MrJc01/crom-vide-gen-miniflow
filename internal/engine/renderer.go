@@ -30,8 +30,9 @@ var bufWriterPool = sync.Pool{
 }
 
 type FFmpegRenderer struct {
-	UseHWAccel  bool
-	JPEGQuality int
+	UseHWAccel    bool
+	JPEGQuality   int
+	ShowSubtitles bool
 }
 
 var (
@@ -54,13 +55,14 @@ func checkNVENC() bool {
 	return nvencSupported
 }
 
-func NewFFmpegRenderer(useHWAccel bool, jpegQuality int) *FFmpegRenderer {
+func NewFFmpegRenderer(useHWAccel bool, jpegQuality int, showSubtitles bool) *FFmpegRenderer {
 	if jpegQuality < 1 || jpegQuality > 31 {
 		jpegQuality = 2
 	}
 	return &FFmpegRenderer{
-		UseHWAccel:  useHWAccel,
-		JPEGQuality: jpegQuality,
+		UseHWAccel:    useHWAccel,
+		JPEGQuality:   jpegQuality,
+		ShowSubtitles: showSubtitles,
 	}
 }
 
@@ -217,7 +219,7 @@ func (r *FFmpegRenderer) RenderCard(ctx context.Context, card models.Card, res m
 	}()
 
 	for f := 0; f < totalFrames; f++ {
-		DrawCardState(dc, card, res, f, imageCache, robotoFont)
+		DrawCardState(dc, card, res, f, imageCache, robotoFont, r.ShowSubtitles)
 
 		rgbaImg, ok := dc.Image().(*image.RGBA)
 		if !ok {
@@ -352,7 +354,7 @@ func parseHexColor(s string) color.Color {
 	return c
 }
 
-func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int, imageCache map[string]image.Image, robotoFont *truetype.Font) {
+func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex int, imageCache map[string]image.Image, robotoFont *truetype.Font, showSubtitles bool) {
 	// Fundo
 	dc.SetHexColor(card.BackgroundColor)
 	dc.Clear()
@@ -644,4 +646,45 @@ func DrawCardState(dc *gg.Context, card models.Card, res models.Size, frameIndex
 
 		dc.Pop()
 	}
+
+	// Legendas da Narração (Subtitles)
+	if showSubtitles && card.Narration != "" {
+		dc.Push()
+
+		// Fonte e tamanho responsivo baseado em Roboto
+		refWidth := 1920.0
+		scale := float64(res.Width) / refWidth
+		scaledFontSize := 32.0 * scale
+		if scaledFontSize < 14 {
+			scaledFontSize = 14
+		}
+
+		if robotoFont != nil {
+			face := truetype.NewFace(robotoFont, &truetype.Options{
+				Size:    scaledFontSize,
+				DPI:     72,
+				Hinting: font.HintingFull,
+			})
+			dc.SetFontFace(face)
+			defer face.Close()
+		}
+
+		subX := float64(res.Width) / 2.0
+		subY := float64(res.Height) * 0.88
+		maxWidth := float64(res.Width) * 0.85
+
+		// Desenhar contorno preto (sombra em 4 direções para legibilidade máxima)
+		dc.SetHexColor("#000000")
+		dc.DrawStringWrapped(card.Narration, subX+2, subY+2, 0.5, 0.5, maxWidth, 1.4, gg.AlignCenter)
+		dc.DrawStringWrapped(card.Narration, subX-2, subY+2, 0.5, 0.5, maxWidth, 1.4, gg.AlignCenter)
+		dc.DrawStringWrapped(card.Narration, subX+2, subY-2, 0.5, 0.5, maxWidth, 1.4, gg.AlignCenter)
+		dc.DrawStringWrapped(card.Narration, subX-2, subY-2, 0.5, 0.5, maxWidth, 1.4, gg.AlignCenter)
+
+		// Desenhar texto principal branco por cima
+		dc.SetHexColor("#ffffff")
+		dc.DrawStringWrapped(card.Narration, subX, subY, 0.5, 0.5, maxWidth, 1.4, gg.AlignCenter)
+
+		dc.Pop()
+	}
 }
+

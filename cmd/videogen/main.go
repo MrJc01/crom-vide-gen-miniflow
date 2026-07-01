@@ -47,6 +47,7 @@ func run() error {
 	showVersion := flag.Bool("version", false, "Exibe a versão do sistema")
 	hwaccel := flag.Bool("hwaccel", false, "Habilita aceleração por hardware (ex: NVENC)")
 	printSchema := flag.Bool("schema", false, "Exibe o esquema textual formatado do template e encerra")
+	subtitles := flag.Bool("subtitles", true, "Habilita ou desabilita as legendas da narração no vídeo")
 	
 	// 49. Profiling de CPU e Memória via pprof
 	cpuprofile := flag.String("cpuprofile", "", "Grava CPU profile no arquivo especificado")
@@ -178,8 +179,22 @@ func run() error {
 
 	slog.Info("Configuração do pool de concorrência", "workers", workersCount)
 
+	showSubtitles := true
+	if template.Subtitles != nil {
+		showSubtitles = *template.Subtitles
+	}
+	isSubtitlesSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "subtitles" {
+			isSubtitlesSet = true
+		}
+	})
+	if isSubtitlesSet {
+		showSubtitles = *subtitles
+	}
+
 	// 14. Estruturar camada de injeção de dependências
-	renderer := engine.NewFFmpegRenderer(*hwaccel, template.JPEGQuality)
+	renderer := engine.NewFFmpegRenderer(*hwaccel, template.JPEGQuality, showSubtitles)
 
 	err = engine.ProcessVideo(ctx, template, *outPath, workersCount, renderer)
 	if err != nil {
