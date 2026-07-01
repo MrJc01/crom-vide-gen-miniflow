@@ -409,6 +409,21 @@ func ResolveNarrationAndDurations(ctx context.Context, tmpl *models.Template) er
 			if err != nil {
 				return fmt.Errorf("erro ao gerar TTS para o card %s: %w", card.ID, err)
 			}
+
+			// O card precisa ser definido o tamanho com o tamanho do áudio com 1 segundo de saída e começo (entrada)
+			dur, err := GetAudioDuration(ttsPath)
+			if err != nil {
+				slog.Warn("Falha ao obter duração do TTS com ffprobe, usando fallback", "card", card.ID, "erro", err)
+				dur = float64(len(card.Narration)) * 0.1 // Fallback aproximado
+			}
+			
+			// Arredonda para cima para o próximo segundo inteiro (Ceil)
+			durSecs := int(dur + 2.0)
+			if float64(durSecs) < dur + 2.0 {
+				durSecs++
+			}
+			card.DurationMs = durSecs * 1000
+			slog.Info("Duração do card ajustada dinamicamente via TTS (TTS + 2.0s Ceil)", "card", card.ID, "duracao_ms", card.DurationMs)
 		}
 		
 		// 2. Determina o modo de duração padrão se não estiver definido
@@ -427,18 +442,9 @@ func ResolveNarrationAndDurations(ctx context.Context, tmpl *models.Template) er
 		
 		switch mode {
 		case "narration":
-			ttsPath := filepath.Join("tmp", fmt.Sprintf("tts_%s.mp3", card.ID))
-			
-			// Mede a duração do TTS com ffprobe
-			dur, err := GetAudioDuration(ttsPath)
-			if err != nil {
-				slog.Warn("Falha ao obter duração do TTS com ffprobe, usando fallback", "card", card.ID, "erro", err)
-				dur = float64(len(card.Narration)) * 0.1 // Fallback aproximado
+			if card.DurationMs <= 0 {
+				card.DurationMs = 5000 // Fallback se não tiver narração mas o modo for narration
 			}
-			
-			// Define a duração: tempo do áudio + 1500ms de margem (entre 1 e 2 segundos)
-			card.DurationMs = int(dur * 1000) + 1500
-			slog.Info("Duração do card calculada via TTS", "card", card.ID, "duracao_ms", card.DurationMs)
 			
 		case "video":
 			// Encontra o maior vídeo
