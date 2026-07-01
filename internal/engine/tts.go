@@ -477,7 +477,24 @@ func ExpandTemplates(tmpl *models.Template) {
 // ResolveRelativePaths converte caminhos de arquivos relativos no template em caminhos absolutos baseados no diretório do workspace
 func ResolveRelativePaths(tmpl *models.Template, workspaceDir string) {
 	if tmpl.AudioURL != "" && !filepath.IsAbs(tmpl.AudioURL) && !strings.HasPrefix(tmpl.AudioURL, "http://") && !strings.HasPrefix(tmpl.AudioURL, "https://") {
-		tmpl.AudioURL = filepath.Clean(filepath.Join(workspaceDir, tmpl.AudioURL))
+		pathDirect := filepath.Clean(filepath.Join(workspaceDir, tmpl.AudioURL))
+		if _, err := os.Stat(pathDirect); err != nil {
+			pathInputs := filepath.Clean(filepath.Join(workspaceDir, "inputs", tmpl.AudioURL))
+			if _, err2 := os.Stat(pathInputs); err2 == nil {
+				tmpl.AudioURL = pathInputs
+			} else {
+				baseName := filepath.Base(tmpl.AudioURL)
+				_ = filepath.Walk(filepath.Join(workspaceDir, "inputs"), func(path string, info os.FileInfo, err error) error {
+					if err == nil && !info.IsDir() && info.Name() == baseName {
+						tmpl.AudioURL = path
+						return filepath.SkipAll
+					}
+					return nil
+				})
+			}
+		} else {
+			tmpl.AudioURL = pathDirect
+		}
 		slog.Info("Caminho da trilha sonora resolvido para absoluto", "path", tmpl.AudioURL)
 	}
 	for i := range tmpl.Cards {
@@ -485,7 +502,24 @@ func ResolveRelativePaths(tmpl *models.Template, workspaceDir string) {
 		for j := range card.Elements {
 			el := &card.Elements[j]
 			if (el.Type == "image" || el.Type == "video") && el.Content != "" && !filepath.IsAbs(el.Content) && !strings.HasPrefix(el.Content, "http://") && !strings.HasPrefix(el.Content, "https://") {
-				el.Content = filepath.Clean(filepath.Join(workspaceDir, el.Content))
+				pathDirect := filepath.Clean(filepath.Join(workspaceDir, el.Content))
+				if _, err := os.Stat(pathDirect); err != nil {
+					pathInputs := filepath.Clean(filepath.Join(workspaceDir, "inputs", el.Content))
+					if _, err2 := os.Stat(pathInputs); err2 == nil {
+						el.Content = pathInputs
+					} else {
+						baseName := filepath.Base(el.Content)
+						_ = filepath.Walk(filepath.Join(workspaceDir, "inputs"), func(path string, info os.FileInfo, err error) error {
+							if err == nil && !info.IsDir() && info.Name() == baseName {
+								el.Content = path
+								return filepath.SkipAll
+							}
+							return nil
+						})
+					}
+				} else {
+					el.Content = pathDirect
+				}
 				slog.Info("Caminho do elemento de mídia resolvido para absoluto", "card", card.ID, "type", el.Type, "path", el.Content)
 			}
 		}
